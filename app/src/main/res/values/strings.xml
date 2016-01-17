@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">LostDogCollar</string>
+
+    <!-- Settings strings -->
+    <string name="main_menu">Settings</string>
+    <string name="collar_wifi">Wi-Fi for Dog Collar</string>
+    <string name="setup_wifi">Setup Wi-Fi</string>
+
+    <!-- Wifi strings -->
+    <string name="wifi_connected">Connected</string>
+    <string name="signal_strength">Wi-Fi Signal Strength</string>
+
+    <!-- Main screen strings -->
+    <string name="led">Collar LED</string>
+    <string name="fb">Post to Facebook</string>
+    <string name="found_dog">Dog is found</string>
+
+    <string-array name="notif_time_choices">
+        <item>every 30 seconds</item>
+        <item>every minute</item>
+        <item>every 2 minutes</item>
+        <item>every 5 minutes</item>
+        <item>every 10 minutes</item>
+    </string-array>
+</resources>
