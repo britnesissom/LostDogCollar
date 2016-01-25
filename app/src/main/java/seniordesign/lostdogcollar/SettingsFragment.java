@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -61,19 +62,10 @@ public class SettingsFragment extends BaseFragment implements AdapterView.OnItem
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         final View view = inflater.inflate(R.layout.fragment_settings, container, false);
-        setupToolbar((Toolbar) view.findViewById(R.id.toolbar), "Settings");
+        setupToolbar((Toolbar) getActivity().findViewById(R.id.toolbar), "Settings");
 
         SwitchCompat wifiSwitch = (SwitchCompat) view.findViewById(R.id.wifi_switch);
-
-        Spinner spinner = (Spinner) view.findViewById(R.id.send_notif_spinner);
-        // Create an ArrayAdapter using the string array and a default spinner layout
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getActivity(),
-                R.array.notif_time_choices, android.R.layout.simple_spinner_item);
-        // Specify the layout to use when the list of choices appears
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
-        spinner.setAdapter(adapter);
-        spinner.setOnItemSelectedListener(this);
+        getWifiSwitchState(wifiSwitch, view);
 
         wifiSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -84,9 +76,15 @@ public class SettingsFragment extends BaseFragment implements AdapterView.OnItem
                     Button setupWifi = (Button) view.findViewById(R.id.setup_wifi_button);
                     setupWifi.setVisibility(View.VISIBLE);
                     setupWifi.setOnClickListener(new MyOnClickListener());
+                    saveWifiEnabledOption(true);
+                }
+                else {
+                    saveWifiEnabledOption(false);
                 }
             }
         });
+
+        setupSpinner(view);
 
         LoginButton loginButton = (LoginButton) view.findViewById(R.id.login_button);
         //loginButton.setReadPermissions("user_friends");
@@ -101,8 +99,8 @@ public class SettingsFragment extends BaseFragment implements AdapterView.OnItem
             public void onSuccess(LoginResult loginResult) {
                 // App code
                 AccessToken token = loginResult.getAccessToken();
-                SharedPreferences prefs = getActivity().getSharedPreferences("LOST_COLLAR_PREFS",
-                        0);
+                SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
+                        .shared_prefs), 0);
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putString("accessToken", token.getToken());
                 editor.apply();
@@ -125,8 +123,43 @@ public class SettingsFragment extends BaseFragment implements AdapterView.OnItem
         return view;
     }
 
+    private void setupSpinner(View view) {
+        Spinner spinner = (Spinner) view.findViewById(R.id.send_notif_spinner);
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getActivity(),
+                R.array.notif_time_choices, android.R.layout.simple_spinner_item);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(this);
+    }
+
+    private void saveWifiEnabledOption(boolean isChecked) {
+        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string.shared_prefs), 0);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean("wifiEnabled", isChecked);
+        editor.apply();
+    }
+
+    // retrieve saved wifi on/off state from SharedPreferences so user does not have to turn wifi
+    // on every time they open the app
+    private void getWifiSwitchState(SwitchCompat wifiSwitch, View view) {
+        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string.shared_prefs), 0);
+        boolean isChecked = prefs.getBoolean("wifiEnabled", false);
+        wifiSwitch.setChecked(isChecked);
+
+        if (isChecked) {
+            Button setupWifi = (Button) view.findViewById(R.id.setup_wifi_button);
+            setupWifi.setVisibility(View.VISIBLE);
+            setupWifi.setOnClickListener(new MyOnClickListener());
+        }
+    }
+
+    // display the wifi list fragment
     private void setupWifi() {
-        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        FragmentTransaction transaction = getActivity().getSupportFragmentManager()
+                .beginTransaction();
         transaction.addToBackStack(null);
         transaction.replace(R.id.content_frag, WifiSetupFragment.newInstance()).commit();
     }
@@ -163,6 +196,7 @@ public class SettingsFragment extends BaseFragment implements AdapterView.OnItem
         //if nothing selected, send notifications every 30 seconds
     }
 
+    // needs permission for both google maps and to find the wifi access points
     private void askForPermission() {
         if (ContextCompat.checkSelfPermission(getContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION)
@@ -176,23 +210,15 @@ public class SettingsFragment extends BaseFragment implements AdapterView.OnItem
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                builder.setMessage("Location is necessary to scan for nearby Wi-Fi networks");
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        requestPermissions(new String[]{Manifest.permission
-                                .ACCESS_FINE_LOCATION}, PERMISSION_CODE);
-                    }
-                });
-                builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                AlertDialog alert = builder.create();
-                alert.show();
+                Snackbar.make(getActivity().findViewById(R.id.coord_layout), "Location necessary to scan " +
+                        "for nearby Wi-Fi networks", Snackbar.LENGTH_LONG)
+                        .setAction("ACCEPT", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                requestPermissions(new String[]{Manifest.permission
+                                        .ACCESS_FINE_LOCATION}, PERMISSION_CODE);
+                            }
+                        }).show();
 
             } else {
 

@@ -1,0 +1,84 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <Button
+        android:id="@+id/found_button"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:text="@string/found_dog"
+        android:elevation="2dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        style="@style/Widget.AppCompat.Button.Colored"/>
+
+
+    <RelativeLayout
+        android:id="@+id/map_rel"
+        android:padding="16dp"
+        android:layout_below="@+id/found_button"
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:layout_marginTop="20dp">
+
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="320dp"
+            android:layout_margin="15dp"
+            android:layout_centerHorizontal="true"/>
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/fab_map"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginBottom="6dp"
+            android:src="@drawable/ic_action_add"
+            app:elevation="6dp"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/led_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/map_rel"
+        android:layout_marginTop="30dp">
+
+        <TextView
+            android:id="@+id/led_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/led"
+            android:textSize="16sp"
+            android:layout_centerVertical="true"/>
+
+        <android.support.v7.widget.SwitchCompat
+            android:id="@+id/led_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/led_text"
+            android:layout_marginLeft="10dp"/>
+
+    </RelativeLayout>
+
+    <Button
+        android:id="@+id/fb_post_button"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_below="@+id/led_layout"
+        android:text="@string/fb"
+        android:elevation="2dp"
+        android:paddingEnd="16dp"
+        android:paddingStart="16dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        style="@style/Widget.AppCompat.Button.Colored"/>
+
+</RelativeLayout>
+
+

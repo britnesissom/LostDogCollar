@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">LostDogCollar</string>
 
+    <string name="shared_prefs">seniordesign.lostdogcollar.LOST_COLLAR_PREFS</string>
+
     <!-- Settings strings -->
     <string name="main_menu">Settings</string>
     <string name="collar_wifi">Wi-Fi for Dog Collar</string>
@@ -9,6 +11,7 @@
     <!-- Wifi strings -->
     <string name="wifi_connected">Connected</string>
     <string name="signal_strength">Wi-Fi Signal Strength</string>
+    <string name="show_pass">Show Password</string>
 
     <!-- Main screen strings -->
     <string name="led">Collar LED</string>
@@ -22,4 +25,10 @@
         <item>every 5 minutes</item>
         <item>every 10 minutes</item>
     </string-array>
+
+    <string name="safe_zone_rad">Radius (in meters)</string>
+    <string name="title_activity_maps">Map</string>
+
+<!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

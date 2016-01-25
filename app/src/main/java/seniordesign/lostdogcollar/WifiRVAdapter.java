@@ -32,7 +32,7 @@ public class WifiRVAdapter extends RecyclerView.Adapter<WifiRVAdapter.ViewHolder
     }
 
     public interface WifiConnectListener {
-        void connectCollarToWifi(Context context, ScanResult scanResult);
+        void showDialog(ScanResult scanResult);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -85,11 +85,18 @@ public class WifiRVAdapter extends RecyclerView.Adapter<WifiRVAdapter.ViewHolder
                     .getResources(), R.drawable.ic_signal_wifi_0_bar));
         }
 
+        WifiManager manager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        String wifiWithQuotes = "\"" + wifiList.get(position).SSID + "\"";
+
+        if (wifiWithQuotes.equals(manager.getConnectionInfo().getSSID())) {
+            holder.connected.setVisibility(View.VISIBLE);
+        }
+
         holder.view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "onClick pos: " + position);
-                listener.connectCollarToWifi(context, wifiList.get(position));
+                Log.d(TAG, "listener: " + listener);
+                listener.showDialog(wifiList.get(position));
             }
         });
 

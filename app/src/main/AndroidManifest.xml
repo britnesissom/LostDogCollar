@@ -2,43 +2,44 @@
 <manifest package="seniordesign.lostdogcollar"
           xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+<uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
 
-    <application
-        android:name="seniordesign.lostdogcollar.AppStart"
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+<application
+    android:name="seniordesign.lostdogcollar.AppStart"
+    android:allowBackup="true"
+    android:icon="@mipmap/ic_launcher"
+    android:label="@string/app_name"
+    android:supportsRtl="true"
+    android:theme="@style/AppTheme">
 
-        <meta-data android:name="com.facebook.sdk.ApplicationId"
-                   android:value="@string/FACEBOOK_APP_ID"/>
-        <meta-data android:name="com.google.android.geo.API_KEY"
-                   android:value="@string/GOOGLE_API_KEY"/>
+    <meta-data android:name="com.facebook.sdk.ApplicationId"
+               android:value="@string/FACEBOOK_APP_ID"/>
+    <meta-data android:name="com.google.android.geo.API_KEY"
+               android:value="@string/GOOGLE_API_KEY"/>
 
-        <activity android:name=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
+    <activity android:name=".MainActivity">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN"/>
 
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity>
+            <category android:name="android.intent.category.LAUNCHER"/>
+        </intent-filter>
+    </activity>
 
-        <activity android:name="com.facebook.FacebookActivity"
-                  android:configChanges=
-                      "keyboard|keyboardHidden|screenLayout|screenSize|orientation"
-                  android:theme="@android:style/Theme.Translucent.NoTitleBar"
-                  android:label="@string/app_name" />
+    <activity android:name="com.facebook.FacebookActivity"
+              android:configChanges=
+                  "keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+              android:theme="@android:style/Theme.Translucent.NoTitleBar"
+              android:label="@string/app_name"/>
 
-        <provider
-            android:authorities="com.facebook.app.FacebookContentProvider742888202509337"
-                  android:name="com.facebook.FacebookContentProvider"
-                  android:exported="true"/>
-    </application>
+    <provider
+        android:authorities="com.facebook.app.FacebookContentProvider742888202509337"
+        android:name="com.facebook.FacebookContentProvider"
+        android:exported="true"/>
+
+</application>
 
 </manifest>

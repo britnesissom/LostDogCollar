@@ -5,31 +5,29 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
-import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
  * Created by britne on 1/5/16.
  */
-public class WifiSetupFragment extends BaseFragment implements WifiRVAdapter.WifiConnectListener {
+public class WifiSetupFragment extends BaseFragment implements WifiPasswordDialogFragment.OnConnectCollarListener, WifiRVAdapter.WifiConnectListener {
 
     private static final String TAG = "WifiSetupFrag";
 
-    private List<ScanResult> scanResultList;
+    private List<ScanResult> scanList;
     private BroadcastReceiver receiver;
     private RecyclerView.Adapter adapter;
     private RecyclerView recyclerView;
@@ -46,8 +44,9 @@ public class WifiSetupFragment extends BaseFragment implements WifiRVAdapter.Wif
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        scanResultList = new ArrayList<>();
-        adapter = new WifiRVAdapter(scanResultList, getContext(), this);
+
+        scanList = new ArrayList<>();
+        adapter = new WifiRVAdapter(scanList, getContext(), this);
         getWifiNetworks();
     }
 
@@ -55,7 +54,7 @@ public class WifiSetupFragment extends BaseFragment implements WifiRVAdapter.Wif
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_wifi_setup, container, false);
-        setupToolbar((Toolbar) view.findViewById(R.id.toolbar), "Wi-Fi Setup");
+        setupToolbar((Toolbar) getActivity().findViewById(R.id.toolbar), "Wi-Fi Setup");
 
         mProgressBar = (ProgressBar) view.findViewById(R.id.progress_bar);
 
@@ -75,10 +74,10 @@ public class WifiSetupFragment extends BaseFragment implements WifiRVAdapter.Wif
         return view;
     }
 
+    //use BroadcastReceiver to let adapter know when wifi list has been retrieved
     private void getWifiNetworks() {
         final WifiManager wifi = (WifiManager) getContext().getSystemService(Context.WIFI_SERVICE);
         if (!wifi.isWifiEnabled()) {
-            //probably need to get permission to do this
             wifi.setWifiEnabled(true);
         }
         wifi.startScan();
@@ -86,11 +85,9 @@ public class WifiSetupFragment extends BaseFragment implements WifiRVAdapter.Wif
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                scanResultList.clear();
-                scanResultList.addAll(wifi.getScanResults());
-                sortWifiBySignal();
-
+                sortWifiBySignal(wifi.getScanResults());
                 adapter.notifyDataSetChanged();
+
                 recyclerView.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.GONE);
             }
@@ -100,38 +97,20 @@ public class WifiSetupFragment extends BaseFragment implements WifiRVAdapter.Wif
     }
 
     // sort wifiList from best signal to worst signal
-    private void sortWifiBySignal() {
+    private void sortWifiBySignal(final List<ScanResult> scanResultList) {
 
-        // if wifi name contains only whitespace, remove it from the list
-        List<ScanResult> results = new ArrayList<>();
-        for (ScanResult wifi : scanResultList) {
-            if (!wifi.SSID.matches("^\\s*$")) {
-                results.add(wifi);
-            }
-        }
-
-        scanResultList.clear();
-        scanResultList.addAll(results);
-
-        Collections.sort(scanResultList, new Comparator<ScanResult>() {
+        getActivity().runOnUiThread(new Runnable() {
             @Override
-            public int compare(ScanResult lhs, ScanResult rhs) {
-                if (lhs.level > rhs.level) {
-                    return 1;
-                }
-                else if (lhs.level == rhs.level) {
-                    return 0;
-                }
-                else if (lhs.level < rhs.level) {
-                    return -1;
-                }
+            public void run() {
+                List<ScanResult> results = WifiUtils.removeDuplicatesAndSort(scanResultList);
 
-                Log.d(TAG, "unreachable code for sorting");
-                return 2;   //should not reach here
+                scanList.clear();
+                scanList.addAll(results);
+
+                adapter.notifyDataSetChanged();
             }
         });
 
-        Collections.reverse(scanResultList);
     }
 
     @Override
@@ -147,33 +126,50 @@ public class WifiSetupFragment extends BaseFragment implements WifiRVAdapter.Wif
                 .SCAN_RESULTS_AVAILABLE_ACTION));
     }
 
-    public void connectCollarToWifi(Context context, ScanResult scanResult) {
-        WifiConfiguration conf = new WifiConfiguration();
-        conf.SSID = "\"" + scanResult.SSID + "\"";
+    public void showDialog(ScanResult scanResult) {
+        String security = WifiUtils.getScanResultSecurity(scanResult);
 
-        String security = getScanResultSecurity(scanResult);
-        if (security.equals("WEP")) {
-
-        } else if (security.equals("EAP")) {
-
-        } else if (security.equals("PSK")) {
-
-        } else if (security.equals("OPEN")) {
-
+        if (security.equals("EAP")) {
+            DialogFragment passwordDialog = WifiPasswordDialogFragment.newInstance(scanResult,
+                    "EAP");
+            passwordDialog.show(getChildFragmentManager(), "dialog");
         } else {
-            Log.d(TAG, "unknown wifi security type");
+            DialogFragment passwordDialog = WifiPasswordDialogFragment.newInstance(scanResult,
+                    "else");
+            passwordDialog.show(getChildFragmentManager(), "dialog");
         }
     }
 
-    public static String getScanResultSecurity(ScanResult scanResult) {
-        final String cap = scanResult.capabilities;
-        final String[] securityModes = { "WEP", "EAP", "PSK" };
-        for (int i = securityModes.length - 1; i >= 0; i--) {
-            if (cap.contains(securityModes[i])) {
-                return securityModes[i];
-            }
-        }
-
-        return "OPEN";
+    public void showSnackbar(final ScanResult scanResult) {
+        Snackbar.make(getActivity().findViewById(R.id.coord_layout), "Can't connect. Password may be " +
+                "incorrect.", Snackbar.LENGTH_LONG)
+                .setAction("RETRY", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        showDialog(scanResult);     // open password dialog again
+                    }
+                }).show();
     }
+
+    public void connectCollarToWifi(String password, ScanResult scanResult) {
+        if (!WifiUtils.connectCollarToWifi(getContext(), password, scanResult)) {
+            showSnackbar(scanResult);
+        } else {
+
+            // update connected text in wifi item
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    public void connectCollarToEapWifi(String identity, String password, final ScanResult
+            scanResult) {
+        if (!WifiUtils.connectCollarToEapWifi(getContext(), identity, password, scanResult)) {
+            showSnackbar(scanResult);
+        } else {
+
+            // need to update connected text in wifi item
+            adapter.notifyDataSetChanged();
+        }
+    }
+
 }
