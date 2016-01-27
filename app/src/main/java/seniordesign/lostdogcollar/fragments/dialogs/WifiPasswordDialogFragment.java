@@ -1,4 +1,4 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.fragments.dialogs;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -15,6 +15,8 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+
+import seniordesign.lostdogcollar.R;
 
 /**
  * Created by britne on 1/17/16.

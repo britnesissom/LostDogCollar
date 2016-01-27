@@ -1,4 +1,4 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.fragments;
 
 import android.Manifest;
 import android.app.Activity;
@@ -8,11 +8,10 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.Toolbar;
@@ -36,18 +35,23 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import seniordesign.lostdogcollar.OnSendResponseListener;
+import seniordesign.lostdogcollar.R;
+import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
 
-public class HomeFragment extends BaseFragment implements GoogleApiClient.ConnectionCallbacks,
+
+public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
 
-    private static final int SAFE_ZONE_CODE = 100;
-    private static final int DOG_LOCATION_CODE = 101;
     private static final int RESOLVE_ERROR_CODE = 1001;
-    private static final String TAG = "MainFragment";
+    private static final String TAG = "HomeFragment";
 
     //private boolean mResolvingError;
 
@@ -55,9 +59,8 @@ public class HomeFragment extends BaseFragment implements GoogleApiClient.Connec
     private GoogleMap map;
     private GoogleApiClient mGoogleApiClient;
     private Location location;
-    private int radius;
     private List<Geofence> safeZoneList;
-    private TCPClient tcpClient = null;
+    private List<String> safezones;
 
     public HomeFragment() {
         // Required empty public constructor
@@ -78,11 +81,7 @@ public class HomeFragment extends BaseFragment implements GoogleApiClient.Connec
                     .build();
         }
         setmResolvingError(false);
-        radius = -1;
-
-        ServerResponseAsyncTask srat = new ServerResponseAsyncTask();
-        srat.execute();
-
+        safezones = new ArrayList<>();
     }
 
     @Override
@@ -100,6 +99,7 @@ public class HomeFragment extends BaseFragment implements GoogleApiClient.Connec
             @Override
             public void onMapReady(GoogleMap googleMap) {
                 map = googleMap;
+                addCircles();
             }
         });
 
@@ -116,10 +116,7 @@ public class HomeFragment extends BaseFragment implements GoogleApiClient.Connec
         foundButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (tcpClient != null) {
-                    Log.d(TAG, "sending coord request message");
-                    tcpClient.sendMessage("GET 1\r\n");
-                }
+
             }
         });
 
@@ -134,56 +131,87 @@ public class HomeFragment extends BaseFragment implements GoogleApiClient.Connec
         return view;
     }
 
-    private void addSafeZone() {
-        /*if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {*/
-
-            //do some stuff
-            Log.d(TAG, "safe zone click");
-            FragmentTransaction transaction = getActivity().getSupportFragmentManager()
-                    .beginTransaction();
-            transaction.addToBackStack(null);
-            transaction.replace(R.id.content_frag, AddSafeZoneFragment.newInstance());
-            transaction.commit();
-
-        /*} else {
-            //PermissionUtils permissionUtils = new PermissionUtils(getContext(), this);
-            String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
-            String[] reasons = {"Location is necessary to view safe zones on Google Maps"};
-            int[] codes = {SAFE_ZONE_CODE};
-            getPermission(permissions, reasons, codes);
-            //this.requestPermissions(permissions, SAFE_ZONE_CODE);
-        }*/
+    /**
+     * Retrieves safezones from server which returns all safezones as string
+     */
+    private void retrieveSafezones() {
+        String message = getResources().getString(R.string.get_safezones);
+        RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
+            @Override
+            public void onSendResponse(String response) {
+                //Log.d(TAG, "safezones: " + response);
+                convertResponseToList(response);
+            }
+        });
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
+        } else {
+            rsat.execute(message);
+        }
     }
 
-    public boolean getPermission(final String[] permissions, String[] reasons, int[] codes) {
 
-        for (int i = 0; i < permissions.length; i++) {
+    /**
+     * converts string of all safezones to List containing separated safezones
+     */
+    private void convertResponseToList(String safezoneString) {
+        String[] safezoneArray = safezoneString.split("\t");
 
-            if (ContextCompat.checkSelfPermission(getContext(), permissions[i])
-                    != PackageManager.PERMISSION_GRANTED) {
-                Log.d("Utils", "activity: " + this + ", permission: " + permissions[i]);
+        Collections.addAll(safezones, safezoneArray);
+        addCircles();
+        //Log.i(TAG, "safezones size: " + safezones.size());
+    }
 
-                if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                        permissions[i])) {
-                    onShowSnackbar(reasons[i], permissions);
-                } else {
-                    requestPermissions(new String[]{permissions[i]}, codes[i]);
+
+    private void addCircles() {
+        for (String sz : safezones) {
+            // splits string by any # of consecutive spaces
+            // safezone[0] = coords
+            // safezone[1] = radius
+            final                           String[] safezone = sz.split("\\s+");
+
+            //sc.useDelimiter("\\D*"); // skip everything that is not a digit
+
+            // converts safezone[0] into lat lng coords
+            // TODO: find better way to get coords
+            String[] latLng = safezone[0].split(",");
+            latLng[0] = latLng[0].substring(1);
+            latLng[1] = latLng[1].substring(0, latLng[1].length()-1);
+            final LatLng coords = new LatLng(Double.parseDouble(latLng[0]), Double.parseDouble
+                    (latLng[1]));
+
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    map.addCircle(new CircleOptions()
+                            .center(coords)
+                            .radius(Double.parseDouble(safezone[1]))
+                            .fillColor(0x44ff0000)
+                            .strokeColor(0xffff0000)
+                            .strokeWidth(0));
                 }
-            } else {
-                return true;
-            }
+            });
         }
-        return true;
+    }
+
+    /**
+     * Opens fragment to add safezone to map and store on server
+     */
+    private void addSafeZone() {
+        FragmentTransaction transaction = getActivity().getSupportFragmentManager()
+                .beginTransaction();
+        transaction.addToBackStack(null);
+        transaction.replace(R.id.content_frag, AddSafeZoneFragment.newInstance());
+        transaction.commit();
     }
 
     @Override
     public void onConnected(Bundle connectionHint) {
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            onCreateMap();
+            locationPermissionGranted();
+            retrieveSafezones();
         } else {
-            //PermissionUtils permissionUtils = new PermissionUtils(getContext(), this);
             String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
             String[] reasons = {"Location is necessary to view pet's current location on Google " +
                     "Maps"};
@@ -234,13 +262,16 @@ public class HomeFragment extends BaseFragment implements GoogleApiClient.Connec
             case R.id.app_settings:
                 FragmentTransaction transaction = getFragmentManager().beginTransaction();
                 transaction.addToBackStack(null);
-                transaction.replace(R.id.content_frag, SettingsFragment.newInstance())
+                transaction.replace(R.id.content_frag, SettingsPageFragment.newInstance())
                         .commit();
                 break;
         }
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Open Facebook share dialog to allow user to post pet's last known location to Facebook
+     */
     private void postToFacebook() {
         ShareDialog share = new ShareDialog(this);
         if (ShareDialog.canShow(ShareLinkContent.class)) {
@@ -256,8 +287,12 @@ public class HomeFragment extends BaseFragment implements GoogleApiClient.Connec
         }
     }
 
-    public void onCreateMap() {
+    /**
+     * initializes map after permission has been granted
+     */
+    public void locationPermissionGranted() {
         try {
+            // TODO: change location to pet's last location, not yours
             map.setMyLocationEnabled(true);
             location = LocationServices.FusedLocationApi.getLastLocation(
                     mGoogleApiClient);
@@ -269,51 +304,8 @@ public class HomeFragment extends BaseFragment implements GoogleApiClient.Connec
         }
 
         LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
-        CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latlng, 14);
+        CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latlng, 15);
         map.animateCamera(camera);
-    }
-
-    public void onShowSnackbar(String message, final String[] permissions) {
-        Snackbar.make(getActivity().findViewById(R.id.coord_layout), message, Snackbar
-                .LENGTH_INDEFINITE)
-                .setAction("ACCEPT", new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        // Request the permission
-                        ActivityCompat.requestPermissions(getActivity(), permissions,
-                                SAFE_ZONE_CODE);
-                    }
-                }).show();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull final String[] permissions, @NonNull int[]
-                                                       grantResults) {
-        Log.d(TAG, "onRequestPermissionsResult");
-        switch (requestCode) {
-            case DOG_LOCATION_CODE: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    // permission was granted, yay!
-                    // this isn't necessary for floating action button click so fix that
-                    onCreateMap();
-
-                } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                    // Should we show an explanation?
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                            permissions[0])) {
-                        onShowSnackbar("Location is necessary to use Google Maps" +
-                                " and set safe zones", permissions);
-                    } else {
-                        //Never ask again selected, or device policy prohibits the app from having that permission.
-                        //So, disable that feature, or fall back to another situation...
-                    }
-                }
-            }
-        }
     }
 
     @Override
@@ -363,49 +355,6 @@ public class HomeFragment extends BaseFragment implements GoogleApiClient.Connec
                     mGoogleApiClient.connect();
                 }
             }
-        }
-    }
-
-    public class ServerResponseAsyncTask extends AsyncTask<String,String,Void> {
-
-        private TCPClient.OnResponseReceivedListener listener;
-
-        public ServerResponseAsyncTask() {
-            //this.listener = listener;
-        }
-
-        @Override
-        protected Void doInBackground(String... message) {
-
-            //we create a TCPClient object and
-
-            if (tcpClient == null) {
-                tcpClient = new TCPClient(new TCPClient.OnResponseReceivedListener() {
-                    @Override
-                    //here the messageReceived method is implemented
-                    public void onResponseReceived(String message) {
-                        Log.d("myapp", "message: " + message);
-                        //listener.onResponseReceived(message);
-                        //this method calls the onProgressUpdate
-                        publishProgress(message);
-                    }
-                });
-                tcpClient.run();
-            }
-            else {
-                Log.d(TAG, "tcpClient already running");
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(String... values) {
-            super.onProgressUpdate(values);
-
-            //dynamicAdapter.addItem(values[0]);
-            Log.d(TAG, "coords: " + values[0]);
-
         }
     }
 }

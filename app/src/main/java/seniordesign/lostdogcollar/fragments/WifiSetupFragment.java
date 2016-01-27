@@ -1,4 +1,4 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.fragments;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -20,10 +20,15 @@ import android.widget.ProgressBar;
 import java.util.ArrayList;
 import java.util.List;
 
+import seniordesign.lostdogcollar.R;
+import seniordesign.lostdogcollar.fragments.dialogs.WifiPasswordDialogFragment;
+import seniordesign.lostdogcollar.WifiRVAdapter;
+import seniordesign.lostdogcollar.WifiUtils;
+
 /**
  * Created by britne on 1/5/16.
  */
-public class WifiSetupFragment extends BaseFragment implements WifiPasswordDialogFragment.OnConnectCollarListener, WifiRVAdapter.WifiConnectListener {
+public class WifiSetupFragment extends SettingsBaseFragment implements WifiPasswordDialogFragment.OnConnectCollarListener, WifiRVAdapter.WifiConnectListener {
 
     private static final String TAG = "WifiSetupFrag";
 

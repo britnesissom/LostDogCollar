@@ -1,4 +1,4 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.fragments;
 
 import android.Manifest;
 import android.content.DialogInterface;
@@ -30,8 +30,11 @@ import com.facebook.FacebookException;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 
+import seniordesign.lostdogcollar.R;
 
-public class SettingsFragment extends BaseFragment implements AdapterView.OnItemSelectedListener {
+
+public class SettingsPageFragment extends SettingsBaseFragment implements AdapterView
+        .OnItemSelectedListener {
 
     private static final String TAG = "SettingsFragment";
     private static final int THIRTY_SECONDS = 0;
@@ -43,12 +46,12 @@ public class SettingsFragment extends BaseFragment implements AdapterView.OnItem
 
     private CallbackManager callbackManager;
 
-    public SettingsFragment() {
+    public SettingsPageFragment() {
         // Required empty public constructor
     }
 
-    public static SettingsFragment newInstance() {
-        return new SettingsFragment();
+    public static SettingsPageFragment newInstance() {
+        return new SettingsPageFragment();
     }
 
     @Override

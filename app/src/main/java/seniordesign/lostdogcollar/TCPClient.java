@@ -22,7 +22,7 @@ public class TCPClient {
 
     private static final String TAG = "TCPClient";
 
-    private static final String SERVER_IP = BuildConfig.SERVER_IP; //your computer IP address
+    private static final String SERVER_IP = "172.17.104.247"; //your computer IP address
     private static final String PRIVATE_SERVER_IP = BuildConfig.PRIVATE_SERVER_IP; //your computer IP address
     private static final int SERVER_PORT = 12000;
     // message to send to the server
@@ -35,14 +35,25 @@ public class TCPClient {
     private PrintWriter mBufferOut;
     // used to read messages from the server
     private BufferedReader mBufferIn;
+    private Socket socket;
 
-    public TCPClient() {
-    }
+    private static TCPClient tcpClient = null;
+
+    private TCPClient() { }
 
     /**
-     * Constructor of the class. OnMessagedReceived listens for the messages received from server
+     * TCPClient is singleton because we want one client to communicate with the server across
+     * the app
+     * @return instance of TCPClient
      */
-    public TCPClient(OnResponseReceivedListener listener) {
+    public static TCPClient getInstance() {
+        if (tcpClient == null) {
+            tcpClient = new TCPClient();
+        }
+        return tcpClient;
+    }
+
+    public void setListener(OnResponseReceivedListener listener) {
         mMessageListener = listener;
     }
 
@@ -60,20 +71,41 @@ public class TCPClient {
         }
     }
 
+    public boolean isRunning() {
+        return mRun;
+    }
+
     /**
      * Close the connection and release the members
      */
     public void stopClient() {
-        Log.i("Debug", "stopClient");
 
-        // send mesage that we are closing the connection
+        // send message that we are closing the connection
         //sendMessage(Constants.CLOSED_CONNECTION + "Kazy");
-
         mRun = false;
 
         if (mBufferOut != null) {
             mBufferOut.flush();
             mBufferOut.close();
+        }
+
+        try {
+            if (mBufferIn != null) {
+                mBufferIn.close();
+            }
+        }
+        catch (IOException e) {
+            Log.d(TAG, "error closing input buffer: " + e.getMessage());
+        }
+
+        try {
+            if (socket != null) {
+                socket.close();
+                Log.i(TAG, "Socket closed in stopClient");
+            }
+        }
+        catch (IOException e) {
+            Log.e(TAG, "error closing socket: " + e.getMessage());
         }
 
         mMessageListener = null;
@@ -82,10 +114,13 @@ public class TCPClient {
         mServerMessage = null;
     }
 
+    /**
+     * Opens socket to communicate with server and closes socket when communication is complete.
+     * Sends response from server to listener
+     */
     public void run() {
 
         mRun = true;
-        Socket socket = null;
 
         try {
             //here you must put your computer's IP address.
@@ -96,34 +131,27 @@ public class TCPClient {
             //create a socket to make the connection with the server
             socket = new Socket(serverAddr, SERVER_PORT);
 
-
-            Log.i("Debug", "inside try catch");
             //sends the message to the server
             mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
 
             //receives the message which the server sends back
             mBufferIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
             // send login name
             //sendMessage(Constants.LOGIN_NAME + PreferencesManager.getInstance().getUserName());
             //sendMessage("Hi");
             //in this while the client listens for the messages sent by the server
-            Log.i(TAG, "about to run + send message to server");
-            while (mRun) {
+            mServerMessage = mBufferIn.readLine();
+            Log.d(TAG, "server message: " + mServerMessage + ", listener: " + mMessageListener);
 
-                mServerMessage = mBufferIn.readLine();
-                //Log.d("myap", "running... after");
-
-                if(mServerMessage != null){
-                    Log.i(TAG, "Received: " + mServerMessage);
-                }
-                if (mServerMessage != null && mMessageListener != null) {
-                    Log.i(TAG,"receiving server response...");
-                    //call the method onResponseReceived from MyActivity class
-                    mMessageListener.onResponseReceived(mServerMessage);
-                }
-
+            if (mServerMessage != null) {
+                Log.i(TAG, "Received: " + mServerMessage);
             }
-            Log.i("RESPONSE FROM SERVER", "S: Received Message: '" + mServerMessage + "'");
+            if (mServerMessage != null && mMessageListener != null) {
+                Log.i(TAG, "receiving server response...");
+                //call the method onResponseReceived from MyActivity class
+                mMessageListener.onResponseReceived(mServerMessage);
+            }
 
         } catch (IOException e) {
 
@@ -148,6 +176,6 @@ public class TCPClient {
     //Declare the interface. The method onResponseReceived(String message) will must be implemented in the MyActivity
     //class at on asynckTask doInBackground
     public interface OnResponseReceivedListener {
-        void onResponseReceived(String message);
+        void onResponseReceived(String response);
     }
 }

@@ -1,4 +1,4 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.fragments;
 
 import android.Manifest;
 import android.app.Activity;
@@ -6,11 +6,15 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,36 +28,29 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 
+import seniordesign.lostdogcollar.R;
+import seniordesign.lostdogcollar.async.SendMessageAsyncTask;
+import seniordesign.lostdogcollar.fragments.dialogs.SafeZoneDialogFragment;
 
-/*
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link AddSafeZoneFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link AddSafeZoneFragment#newInstance} factory method to
- * create an instance of this fragment.
- *
- */
-public class AddSafeZoneFragment extends BaseFragment implements GoogleApiClient
-        .OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks, SafeZoneDialogFragment
-        .OnSendRadiusListener {
+public class AddSafeZoneFragment extends MapsBaseFragment implements GoogleApiClient
+        .OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks, SafeZoneDialogFragment.OnSendRadiusListener {
 
     private static final String TAG = "AddSFFrag";
     private static final int RESOLVE_ERROR_CODE = 1001;
     private MapView mapView;
     private GoogleMap map;
     private GoogleApiClient mGoogleApiClient;
-    private Location location;
     private LatLng coords;
 
-    public static AddSafeZoneFragment newInstance() {
-        AddSafeZoneFragment fragment = new AddSafeZoneFragment();
-        return fragment;
-    }
     public AddSafeZoneFragment() {
         // Required empty public constructor
+    }
+
+    public static AddSafeZoneFragment newInstance() {
+        return new AddSafeZoneFragment();
     }
 
     @Override
@@ -75,6 +72,8 @@ public class AddSafeZoneFragment extends BaseFragment implements GoogleApiClient
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_add_safe_zone, container, false);
+        setupToolbar((Toolbar) getActivity().findViewById(R.id.toolbar), "Safezone Setup");
+        ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mapView = (MapView) view.findViewById(R.id.map);
         mapView.onCreate(savedInstanceState);
@@ -90,11 +89,33 @@ public class AddSafeZoneFragment extends BaseFragment implements GoogleApiClient
         return view;
     }
 
+    public void locationPermissionGranted() {
+        try {
+            map.setMyLocationEnabled(true);
+            Location location = LocationServices.FusedLocationApi.getLastLocation(
+                    mGoogleApiClient);
+            LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
+            CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latlng, 15);
+            map.animateCamera(camera);
+        }
+        catch (SecurityException e) {
+            Log.e(TAG, "this error should not occur because permission has already " +
+                    "been granted");
+            Log.e(TAG, e.getMessage());
+        }
+
+        Snackbar.make(getActivity().findViewById(R.id.coord_layout), "Tap area on map to add " +
+                "safe zone", Snackbar.LENGTH_INDEFINITE)
+                .setAction("OK", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) { }
+                }).show();
+    }
+
     private void setOnMapClickListener() {
         map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-                Log.d(TAG, "map clicked");
                 coords = latLng;
                 DialogFragment safeZoneDialog = SafeZoneDialogFragment.newInstance();
                 safeZoneDialog.show(getChildFragmentManager(), "dialog");
@@ -104,43 +125,38 @@ public class AddSafeZoneFragment extends BaseFragment implements GoogleApiClient
 
     public void sendToServer(int radius) {
         Log.d(TAG, "latlng: " + coords.latitude + "," + coords.longitude);
-        String message = "SAFEZONE (" + coords.latitude + "," + coords.longitude + ") " + radius
-                + "\r\n";
-        SendMessageAsyncTask srat = new SendMessageAsyncTask(new TCPClient.OnResponseReceivedListener() {
-            @Override
-            public void onResponseReceived(String response) {
-                Log.d(TAG, "response: " + response);
-            }
-        });
-        srat.execute(message);
+        String message = "SAFEZONE (" + coords.latitude + "," + coords.longitude + ") " +
+                radius + "\r\n";
+
+        map.addCircle(new CircleOptions()
+                .center(coords)
+                .radius(radius)
+                .fillColor(0x44ff0000)
+                .strokeColor(0xffff0000)
+                .strokeWidth(0));
+
+        // probably do this in asynctask
+        SendMessageAsyncTask smat = new SendMessageAsyncTask();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            smat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
+        } else {
+            smat.execute(message);
+        }
     }
 
     @Override
     public void onConnected(Bundle connectionHint) {
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            map.setMyLocationEnabled(true);
-            location = LocationServices.FusedLocationApi.getLastLocation(
-                    mGoogleApiClient);
-            LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
-            CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latlng, 14);
-            map.animateCamera(camera);
-
-            Snackbar.make(getActivity().findViewById(R.id.coord_layout), "Tap area on map to add " +
-                    "safe zone", Snackbar.LENGTH_INDEFINITE)
-                    .setAction("OK", new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) { }
-                    }).show();
-
-        } /*else {
-            //PermissionUtils permissionUtils = new PermissionUtils(getContext(), this);
+            locationPermissionGranted();
+        } else {
             String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
-            String[] reasons = {"Location is necessary to view pet's current location on Google " +
-                    "Maps"};
-            int[] codes = {DOG_LOCATION_CODE};
+            String[] reasons = {"Location access allows you to easily add safe zones near your " +
+                    "current location."};
+            int[] codes = {SAFE_ZONE_CODE};
             getPermission(permissions, reasons, codes);
-        }*/
+        }
     }
 
     @Override
@@ -220,44 +236,4 @@ public class AddSafeZoneFragment extends BaseFragment implements GoogleApiClient
             }
         }
     }
-
-
-    // TODO: Rename method, update argument and hook method into UI event
-    /*public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
-
-    *//**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     *//*
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
-    }*/
 }

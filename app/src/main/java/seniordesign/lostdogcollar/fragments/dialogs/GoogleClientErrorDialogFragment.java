@@ -1,4 +1,4 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.fragments.dialogs;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -7,6 +7,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 
 import com.google.android.gms.common.GoogleApiAvailability;
+
+import seniordesign.lostdogcollar.fragments.MapsBaseFragment;
 
 /**
  * Created by britne on 1/23/16.
@@ -28,6 +30,6 @@ public class GoogleClientErrorDialogFragment extends DialogFragment {
 
     @Override
     public void onDismiss(DialogInterface dialog) {
-        ((BaseFragment) getParentFragment()).onDialogDismissed();
+        ((MapsBaseFragment) getParentFragment()).onDialogDismissed();
     }
 }
