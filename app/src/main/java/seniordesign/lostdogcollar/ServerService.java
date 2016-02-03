@@ -7,6 +7,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
 
 public class ServerService extends Service {
     private Looper mServiceLooper;
@@ -62,7 +63,20 @@ public class ServerService extends Service {
             @Override
             public void run() {
                 TCPClient tcpClient = TCPClient.getInstance();
-                tcpClient.run();
+                if (!tcpClient.run()) {
+                    Toast.makeText(getApplicationContext(), "Unable to connect to server", Toast
+                            .LENGTH_SHORT).show();
+
+                    /*Snackbar.make(getActivity().findViewById(R.id.coord_layout),
+                            message, Snackbar
+                            .LENGTH_INDEFINITE)
+                            .setAction("OK", new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                }
+                            }).show();*/
+                }
+
             }
         });
         thread.start();

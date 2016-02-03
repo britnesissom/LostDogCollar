@@ -14,9 +14,9 @@
     <string name="show_pass">Show Password</string>
 
     <!-- Main screen strings -->
-    <string name="led">Collar LED</string>
-    <string name="fb">Post to Facebook</string>
-    <string name="found_dog">Dog is found</string>
+    <string name="led">Collar Light</string>
+    <string name="add_sz">Add safe zone</string>
+    <string name="found_dog">Stop notifications</string>
 
     <string-array name="notif_time_choices">
         <item>every 30 seconds</item>

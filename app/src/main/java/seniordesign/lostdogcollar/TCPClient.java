@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -22,8 +23,9 @@ public class TCPClient {
 
     private static final String TAG = "TCPClient";
 
-    private static final String SERVER_IP = "172.17.104.247"; //your computer IP address
-    private static final String PRIVATE_SERVER_IP = BuildConfig.PRIVATE_SERVER_IP; //your computer IP address
+    private static final String SERVER_IP = "butterfinger.cs.utexas.edu"; //your computer IP address
+    //private static final String PRIVATE_SERVER_IP = BuildConfig.PRIVATE_SERVER_IP; //your
+    // computer IP address
     private static final int SERVER_PORT = 12000;
     // message to send to the server
     private String mServerMessage;
@@ -36,6 +38,7 @@ public class TCPClient {
     // used to read messages from the server
     private BufferedReader mBufferIn;
     private Socket socket;
+    private int retry = 1;
 
     private static TCPClient tcpClient = null;
 
@@ -65,7 +68,7 @@ public class TCPClient {
     public void sendMessage(String message) {
         //Log.d(TAG, "Sending message maybe...");
         if (mBufferOut != null && !mBufferOut.checkError()) {
-            Log.i(TAG, "message should be sending now");
+            Log.i(TAG, "message should be sending now: " + message);
             mBufferOut.print(message);
             mBufferOut.flush();
         }
@@ -118,7 +121,7 @@ public class TCPClient {
      * Opens socket to communicate with server and closes socket when communication is complete.
      * Sends response from server to listener
      */
-    public void run() {
+    public boolean run() {
 
         mRun = true;
 
@@ -130,6 +133,8 @@ public class TCPClient {
 
             //create a socket to make the connection with the server
             socket = new Socket(serverAddr, SERVER_PORT);
+
+            Log.i(TAG, "connected");
 
             //sends the message to the server
             mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
@@ -153,17 +158,37 @@ public class TCPClient {
                 mMessageListener.onResponseReceived(mServerMessage);
             }
 
+        } catch (ConnectException e) {
+            /*Looper.prepare();
+            final Handler handler = new Handler();*/
+
+            Log.d(TAG, "trying to reconnect");
+            if (retry < 3) {
+                retry++;
+
+                // try to reconnect after 3 seconds
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ie) {
+                    Log.d(TAG, "interruptedexception");
+                }
+
+                run();
+            } else {
+                return false;
+            }
+
         } catch (IOException e) {
-
             Log.e(TAG, "S: Error", e);
-
-        } finally {
+        }
+        finally {
             //the socket must be closed. It is not possible to reconnect to this socket
             // after it is closed, which means a new socket instance has to be created.
             try {
                 if (socket != null) {
                     socket.close();
                     Log.i(TAG, "Socket closed");
+                    retry = 1;
                 }
             }
             catch (IOException e) {
@@ -171,6 +196,7 @@ public class TCPClient {
             }
         }
 
+        return true;
     }
 
     //Declare the interface. The method onResponseReceived(String message) will must be implemented in the MyActivity
