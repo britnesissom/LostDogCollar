@@ -223,13 +223,13 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
      */
     private void retrieveSafezones() {
         String message = getResources().getString(R.string.get_safezones);
-        RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener
+        /*RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener
                 ());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
         } else {
             rsat.execute(message);
-        }
+        }*/
     }
 
     /**
@@ -401,9 +401,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                     mGoogleApiClient);*/
             RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "GET 1 ");
+                rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "GET_RECORDS 1 ");
             } else {
-                rsat.execute("GET 1 ");
+                rsat.execute("GET_RECORDS 1 ");
             }
         }
         catch (SecurityException e) {
@@ -415,9 +415,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
     private void displayLocation(String response) {
         List<String> records = ResponseConverterUtil.convertResponseToList(response);
-        Log.d(TAG, "record 1: " + records.get(0));
-        records.remove(0);  // remove the "RECORDS n" message
-        Log.d(TAG, "record 1: " + records.get(0));
+        Log.d(TAG, "displayLocation: record 1: " + records.get(0));
+        //records.remove(0);  // remove the "RECORDS n" message
+        //Log.d(TAG, "record 1: " + records.get(0));
 
         for (String record : records) {
             LatLng latLng = ResponseConverterUtil.convertCoordsString(record);

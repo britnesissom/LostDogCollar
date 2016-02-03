@@ -10,7 +10,7 @@ import seniordesign.lostdogcollar.TCPClient;
  * Created by britne on 1/26/16.
  */
 // TODO: create safe zone retrieval and location retrieval async tasks?
-public class RetrieveFromServerAsyncTask extends AsyncTask<String,Void,Void> {
+public class RetrieveFromServerAsyncTask extends AsyncTask<String,String,Void> {
 
     private OnSendResponseListener listener = null;
 
@@ -26,6 +26,7 @@ public class RetrieveFromServerAsyncTask extends AsyncTask<String,Void,Void> {
             @Override
             public void onResponseReceived(String response) {
                 Log.d("RFSAT", "message: " + message[0] + ", " + "response: " + response);
+                //publishProgress(response);
                 if (listener != null) {
                     listener.onSendResponse(response);
                 }
@@ -36,4 +37,10 @@ public class RetrieveFromServerAsyncTask extends AsyncTask<String,Void,Void> {
         return null;
     }
 
+    @Override
+    protected void onProgressUpdate(String... values) {
+        super.onProgressUpdate(values);
+
+        Log.d("RFSAT", values[0]);
+    }
 }

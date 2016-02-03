@@ -146,17 +146,24 @@ public class TCPClient {
             //sendMessage(Constants.LOGIN_NAME + PreferencesManager.getInstance().getUserName());
             //sendMessage("Hi");
             //in this while the client listens for the messages sent by the server
-            mServerMessage = mBufferIn.readLine();
-            Log.d(TAG, "server message: " + mServerMessage + ", listener: " + mMessageListener);
+            /*StringBuilder everything = new StringBuilder();
+            String line;
+            while ((line = mBuff.readLine()) != null) {
+                everything.append(line);
+            }*/
+            //while (mRun) {
+                mServerMessage = mBufferIn.readLine();
+                Log.d(TAG, "server message: " + mServerMessage + ", listener: " + mMessageListener);
 
-            if (mServerMessage != null) {
-                Log.i(TAG, "Received: " + mServerMessage);
-            }
-            if (mServerMessage != null && mMessageListener != null) {
-                Log.i(TAG, "receiving server response...");
-                //call the method onResponseReceived from MyActivity class
-                mMessageListener.onResponseReceived(mServerMessage);
-            }
+                if (mServerMessage != null) {
+                    //Log.i(TAG, "Received: " + mServerMessage);
+                }
+                if (mServerMessage != null && mMessageListener != null) {
+                    //Log.i(TAG, "server response: " + mServerMessage);
+                    //call the method onResponseReceived from MyActivity class
+                    mMessageListener.onResponseReceived(mServerMessage);
+                }
+            //}
 
         } catch (ConnectException e) {
             /*Looper.prepare();
