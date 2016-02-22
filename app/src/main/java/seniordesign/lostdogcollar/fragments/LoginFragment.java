@@ -1,6 +1,7 @@
 package seniordesign.lostdogcollar.fragments;
 
-import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -12,21 +13,19 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.OptionalPendingResult;
-import com.google.android.gms.common.api.ResultCallback;
 
+import seniordesign.lostdogcollar.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
-import seniordesign.lostdogcollar.services.RegistrationIntentService;
+import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
 
 public class LoginFragment extends Fragment implements GoogleApiClient.OnConnectionFailedListener {
+
+    private static final String TAG = "LoginFrag";
 
     private GoogleApiClient mGoogleApiClient;
     private GoogleSignInOptions gso;
@@ -46,19 +45,19 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
 
         // Configure sign-in to request the user's ID, email address, and basic
 // profile. ID and basic profile are included in DEFAULT_SIGN_IN.
-        gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        /*gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .build();
 
         mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                .enableAutoManage(getActivity() /* FragmentActivity */, this /* OnConnectionFailedListener */)
+                .enableAutoManage(getActivity() *//* FragmentActivity *//*, this *//* OnConnectionFailedListener *//*)
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
-                .build();
+                .build();*/
         // [END build_client]
 
 
         // automatically sign user in
-        OptionalPendingResult<GoogleSignInResult> pendingResult =
+        /*OptionalPendingResult<GoogleSignInResult> pendingResult =
                 Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient);
 
         if (pendingResult.isDone()) {
@@ -73,18 +72,18 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
                     checkIfPrevSignIn(result);
                 }
             });
-        }
+        }*/
 
 
     }
 
-    private void checkIfPrevSignIn(GoogleSignInResult result) {
+    /*private void checkIfPrevSignIn(GoogleSignInResult result) {
         GoogleSignInAccount acct = result.getSignInAccount();
 
         if (acct != null) {
             sendRegToServer(acct);
         }
-    }
+    }*/
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
@@ -105,7 +104,7 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
         // may be displayed when only basic profile is requested. Try adding the
         // Scopes.PLUS_LOGIN scope to the GoogleSignInOptions to see the
         // difference.
-        SignInButton signInButton = (SignInButton) view.findViewById(R.id.google_signin);
+        /*SignInButton signInButton = (SignInButton) view.findViewById(R.id.google_signin);
         signInButton.setSize(SignInButton.SIZE_WIDE);
         signInButton.setScopes(gso.getScopeArray());
 
@@ -115,13 +114,17 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
                 Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
                 startActivityForResult(signInIntent, RC_SIGN_IN);
             }
-        });
+        });*/
 
         TextView createAcct = (TextView) view.findViewById(R.id.create_acct_btn);
         createAcct.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // send to create account screen
+                FragmentTransaction transaction = getActivity().getSupportFragmentManager()
+                        .beginTransaction();
+                transaction.replace(R.id.content_frag, CreateAcctFragment.newInstance());
+                transaction.commit();
             }
         });
 
@@ -133,13 +136,50 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
             @Override
             public void onClick(View v) {
                 // check sign in credentials
+                checkSignIn(username.getText().toString(), password.getText().toString());
             }
         });
 
         return view;
     }
 
-    @Override
+    private void checkSignIn(String username, String password) {
+        String message = "LOGIN "+ username + " " + password + "\r\n";
+
+        RetrieveFromServerAsyncTask rfsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
+            @Override
+            public void onSendResponse(String response) {
+                checkLoginResponse(response);
+            }
+        });
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            rfsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
+        } else {
+            rfsat.execute(message);
+        }
+    }
+
+    private void checkLoginResponse(String response) {
+        switch(response) {
+            case "INVALID USERNAME":
+                Toast.makeText(getContext(), "Invalid username", Toast.LENGTH_SHORT).show();
+                break;
+            case "INVALID PASSWORD":
+                Toast.makeText(getContext(), "Invalid password", Toast.LENGTH_SHORT).show();
+                break;
+            case "SUCCESS":
+                FragmentTransaction transaction = getActivity().getSupportFragmentManager()
+                        .beginTransaction();
+                transaction.replace(R.id.content_frag, HomeFragment.newInstance());
+                transaction.commit();
+                break;
+            default:
+                Log.e(TAG, "response error: " + response);
+
+        }
+    }
+
+/*    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
@@ -155,6 +195,7 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
 
         // TODO: change to acct.getIdToken() for security
         intent.putExtra("user", acct.getEmail());
+        //intent.putExtra("username", )
         getActivity().startService(intent);
 
         FragmentTransaction transaction = getActivity().getSupportFragmentManager()
@@ -174,5 +215,5 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
             // Signed out, show unauthenticated UI.
             //updateUI(false);
         }
-    }
+    }*/
 }

@@ -31,7 +31,8 @@ public class RegistrationIntentService extends IntentService {
     @Override
     public void onHandleIntent(Intent intent) {
 
-        String user = intent.getStringExtra("user");
+        String user = intent.getStringExtra("username");
+        String pwd = intent.getStringExtra("password");
         Log.i(TAG, "user: " + user);
 
         InstanceID instanceID = InstanceID.getInstance(this);
@@ -41,7 +42,7 @@ public class RegistrationIntentService extends IntentService {
                     GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
             Log.i(TAG, "token: " + token);
 
-            String message = "SEND_REG_ID " + user + " " + token + "\r\n";
+            String message = "REGISTER_USER " + user + " " + pwd + " " + token + "\r\n";
 
             TCPClient tcpClient = TCPClient.getInstance();
             tcpClient.setListener(new TCPClient.OnResponseReceivedListener() {

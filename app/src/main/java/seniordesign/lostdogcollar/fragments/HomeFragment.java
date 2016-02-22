@@ -173,9 +173,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     // turn light on if switch is on
-                    sendMessage("NEW_MESSAGE LIGHT_ON\r\n");
+                    sendMessage("NEW_MESSAGE 0 LIGHT_ON\r\n");
                 } else {
-                    sendMessage("NEW_MESSAGE LIGHT_OFF\r\n");
+                    sendMessage("NEW_MESSAGE 0 LIGHT_OFF\r\n");
                 }
             }
         });
@@ -237,7 +237,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "GET_RECORDS 1 ");
         } else {
-            rsat.execute("GET_RECORDS 1 ");
+            rsat.execute("GET_RECORDS 0 1 ");
         }
     }
 

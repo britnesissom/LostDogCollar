@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">LostDogCollar</string>
+    <string name="app_name">DogWatchr</string>
 
     <string name="shared_prefs">seniordesign.lostdogcollar.LOST_COLLAR_PREFS</string>
 
@@ -30,10 +30,13 @@
 
     <!-- Server request strings -->
     <string name="get">GET</string>
-    <string name="get_safezones">GET_SAFEZONES \r\n</string>
+    <string name="get_safezones">GET_SAFEZONES 0 \r\n</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="confirm_pass">Confirm Password</string>
 
 
 </resources>

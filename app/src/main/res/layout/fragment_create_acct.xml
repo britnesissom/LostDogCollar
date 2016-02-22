@@ -3,8 +3,7 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
               android:orientation="vertical"
-             xmlns:app="http://schemas.android.com/apk/res-auto"
-             tools:context="seniordesign.lostdogcollar.fragments.LoginFragment">
+             tools:context="seniordesign.lostdogcollar.fragments.CreateAcctFragment">
 
     <LinearLayout
         android:id="@+id/app_picture"
@@ -12,7 +11,7 @@
         android:layout_height="150dp"
         android:orientation="horizontal"
         android:background="#3F51B5">
-        
+
         <ImageView
             android:layout_width="100dp"
             android:layout_height="wrap_content"
@@ -24,10 +23,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:text="@string/app_name"
+            android:text="DogFindr"
             android:textColor="#fff"
             android:textSize="35dp"/>
-        
+
     </LinearLayout>
 
     <android.support.design.widget.TextInputLayout
@@ -58,42 +57,28 @@
             android:hint="@string/password"/>
     </android.support.design.widget.TextInputLayout>
 
-    <Button
-        android:id="@+id/signin"
+    <android.support.design.widget.TextInputLayout
+        android:layout_marginTop="10dp"
         android:layout_width="300dp"
         android:layout_height="wrap_content"
-        android:text="@string/sign_in"
+        android:layout_gravity="center_horizontal">
+
+        <EditText
+            android:id="@+id/confirm_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:fontFamily="sans-serif"
+            android:hint="@string/confirm_pass"/>
+    </android.support.design.widget.TextInputLayout>
+
+    <Button
+        android:id="@+id/signup"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:text="@string/sign_up"
         android:layout_marginTop="10dp"
         android:layout_gravity="center_horizontal"
         style="@style/Widget.AppCompat.Button.Colored"/>
-
-    <com.google.android.gms.common.SignInButton
-        android:id="@+id/google_signin"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        app:buttonSize="wide"
-        android:layout_gravity="center_horizontal"/>
-
-    <LinearLayout
-        android:layout_gravity="center_horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Don't have an account?"/>
-
-        <TextView
-            android:id="@+id/create_acct_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="5dp"
-            android:text="Sign Up"
-            android:textColor="@color/colorAccent"/>
-
-    </LinearLayout>
 
 </LinearLayout>
