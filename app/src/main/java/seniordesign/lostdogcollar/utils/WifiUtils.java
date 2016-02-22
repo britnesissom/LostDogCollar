@@ -1,4 +1,4 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.utils;
 
 import android.content.Context;
 import android.net.wifi.ScanResult;

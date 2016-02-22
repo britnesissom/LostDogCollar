@@ -24,14 +24,14 @@ public abstract class MapsBaseFragment extends Fragment {
 
     private boolean mResolvingError;
 
-    public void setupToolbar(Toolbar toolbar, String title) {
+    protected void setupToolbar(Toolbar toolbar, String title) {
         toolbar.setTitle(title);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         toolbar.setSaveEnabled(false); //TODO: look at this later
     }
 
     /* Creates a dialog for an error message */
-    public void showErrorDialog(int errorCode) {
+    protected void showErrorDialog(int errorCode) {
         // Create a fragment for the error dialog
         GoogleClientErrorDialogFragment dialogFragment = new GoogleClientErrorDialogFragment();
         // Pass the error that should be displayed
@@ -62,7 +62,7 @@ public abstract class MapsBaseFragment extends Fragment {
      * @param codes - request codes to send to onPermissionsRequestResult
      * @return true if permission already granted
      */
-    public boolean getPermission(final String[] permissions, String[] reasons, int[] codes) {
+    protected boolean getPermission(final String[] permissions, String[] reasons, int[] codes) {
 
         for (int i = 0; i < permissions.length; i++) {
             if (ContextCompat.checkSelfPermission(getContext(), permissions[i])
@@ -82,7 +82,7 @@ public abstract class MapsBaseFragment extends Fragment {
     }
 
 
-    public void onShowSnackbar(String message, final String[] permissions, final int code) {
+    protected void onShowSnackbar(String message, final String[] permissions, final int code) {
         Snackbar.make(getActivity().findViewById(R.id.coord_layout), message, Snackbar
                 .LENGTH_INDEFINITE)
                 .setAction("ACCEPT", new View.OnClickListener() {

@@ -37,14 +37,15 @@ public class SettingsPageFragment extends SettingsBaseFragment implements Adapte
         .OnItemSelectedListener {
 
     private static final String TAG = "SettingsFragment";
-    private static final int THIRTY_SECONDS = 0;
-    private static final int ONE_MINUTE = 1;
-    private static final int TWO_MINUTES = 2;
-    private static final int FIVE_MINUTES = 3;
-    private static final int TEN_MINUTES = 4;
+    private static final int THIRTY_SECONDS = 30000;
+    private static final int ONE_MINUTE = 60000;
+    private static final int TWO_MINUTES = 120000;
+    private static final int FIVE_MINUTES = 300000;
+    private static final int TEN_MINUTES = 1600000;
     private static final int PERMISSION_CODE = 10;
 
     private CallbackManager callbackManager;
+    //private OnNotifTimeListener mListener;
 
     public SettingsPageFragment() {
         // Required empty public constructor
@@ -65,7 +66,7 @@ public class SettingsPageFragment extends SettingsBaseFragment implements Adapte
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         final View view = inflater.inflate(R.layout.fragment_settings, container, false);
-        setupToolbar((Toolbar) getActivity().findViewById(R.id.toolbar), "Settings");
+        setupToolbar((Toolbar) view.findViewById(R.id.toolbar), "Settings");
 
         SwitchCompat wifiSwitch = (SwitchCompat) view.findViewById(R.id.wifi_switch);
         getWifiSwitchState(wifiSwitch, view);
@@ -180,18 +181,23 @@ public class SettingsPageFragment extends SettingsBaseFragment implements Adapte
 
         // send notification interval to server
         switch (parent.getSelectedItemPosition()) {
-            case THIRTY_SECONDS:
+            case 0:
+                //mListener.sendNotifTime(THIRTY_SECONDS);
                 break;
-            case ONE_MINUTE:
+            case 1:
+                //mListener.sendNotifTime(ONE_MINUTE);
                 break;
-            case TWO_MINUTES:
+            case 2:
+                //mListener.sendNotifTime(TWO_MINUTES);
                 break;
-            case FIVE_MINUTES:
+            case 3:
+                //mListener.sendNotifTime(FIVE_MINUTES);
                 break;
-            case TEN_MINUTES:
+            case 4:
+                //mListener.sendNotifTime(TEN_MINUTES);
                 break;
             default:
-
+                //mListener.sendNotifTime(THIRTY_SECONDS);
         }
     }
 
@@ -274,4 +280,25 @@ public class SettingsPageFragment extends SettingsBaseFragment implements Adapte
             setupWifi();
         }
     }
+
+/*    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof OnNotifTimeListener) {
+            mListener = (OnNotifTimeListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnNotifTimeListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mListener = null;
+    }
+
+    public interface OnNotifTimeListener {
+        void sendNotifTime(int time);
+    }*/
 }

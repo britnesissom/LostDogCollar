@@ -23,7 +23,7 @@ import java.util.List;
 import seniordesign.lostdogcollar.R;
 import seniordesign.lostdogcollar.fragments.dialogs.WifiPasswordDialogFragment;
 import seniordesign.lostdogcollar.WifiRVAdapter;
-import seniordesign.lostdogcollar.WifiUtils;
+import seniordesign.lostdogcollar.utils.WifiUtils;
 
 /**
  * Created by britne on 1/5/16.

@@ -7,7 +7,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -21,14 +20,22 @@ public class SafeZoneDialogFragment extends DialogFragment {
 
     private static final String TAG = "SafeZoneDialog";
 
+    private static final String LAT = "lat";
+    private static final String LONG = "longi";
+
     private OnSendRadiusListener listener;
 
     public interface OnSendRadiusListener {
-        void sendToServer(int meters);
+        void sendSafezoneToServer(int meters, double lat, double longi);
     }
 
-    public static SafeZoneDialogFragment newInstance() {
-        return new SafeZoneDialogFragment();
+    public static SafeZoneDialogFragment newInstance(double lat, double longi) {
+        SafeZoneDialogFragment fragment = new SafeZoneDialogFragment();
+        Bundle args = new Bundle();
+        args.putDouble(LAT, lat);
+        args.putDouble(LONG, longi);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
@@ -37,7 +44,7 @@ public class SafeZoneDialogFragment extends DialogFragment {
 
         try {
             listener = (OnSendRadiusListener) getParentFragment();
-            Log.d(TAG, "listener: " + listener);
+            //Log.d(TAG, "listener: " + listener);
         } catch (ClassCastException e) {
             throw new ClassCastException("Calling Fragment must implement " +
                     "OnSendRadiusListener");
@@ -58,7 +65,8 @@ public class SafeZoneDialogFragment extends DialogFragment {
         builder.setPositiveButton("ADD", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                listener.sendToServer(Integer.parseInt(radius.getText().toString()));
+                listener.sendSafezoneToServer(Integer.parseInt(radius.getText().toString()),
+                        getArguments().getDouble(LAT), getArguments().getDouble(LONG));
             }
         });
 

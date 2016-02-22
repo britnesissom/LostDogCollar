@@ -25,6 +25,7 @@ android {
         resValue "string", "GOOGLE_API_KEY", "\"${retrieveProp('GOOGLE_API_KEY')}\""
         resValue "string", "FACEBOOK_APP_ID", "\"${retrieveProp('FACEBOOK_APP_ID')}\""
         buildConfigField "String", "SERVER_IP", "\"${retrieveProp('SERVER_IP')}\""
+        buildConfigField "String", "SENDER_ID", "\"${retrieveProp('SENDER_ID')}\""
     }
     buildTypes {
         release {
@@ -46,4 +47,7 @@ dependencies {
     compile 'com.android.support:design:23.1.1'
     compile 'com.google.android.gms:play-services:8.4.0'
     compile 'com.facebook.android:facebook-android-sdk:4.7.0'
+    compile 'com.android.support:cardview-v7:23.1.1'
 }
+
+apply plugin: 'com.google.gms.google-services'

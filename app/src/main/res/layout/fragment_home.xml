@@ -3,8 +3,13 @@
                 android:layout_height="match_parent"
                 android:animateLayoutChanges="true">
 
+    <include layout="@layout/app_bar"
+        android:id="@+id/app_bar"/>
+
     <LinearLayout
         android:id="@+id/buttons"
+        android:layout_marginTop="16dp"
+        android:layout_below="@+id/app_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true">
@@ -15,7 +20,6 @@
             android:layout_height="wrap_content"
             android:text="@string/found_dog"
             android:elevation="2dp"
-            android:layout_marginTop="20dp"
             android:paddingEnd="16dp"
             android:paddingStart="16dp"
             style="@style/Widget.AppCompat.Button.Colored"/>
@@ -28,8 +32,6 @@
             android:elevation="2dp"
             android:paddingEnd="16dp"
             android:paddingStart="16dp"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="20dp"
             style="@style/Widget.AppCompat.Button.Colored"/>
 
     </LinearLayout>
@@ -41,7 +43,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_below="@+id/buttons"
-        android:layout_marginTop="15dp">
+        android:layout_marginTop="10dp">
 
         <TextView
             android:id="@+id/led_text"
@@ -60,13 +62,22 @@
 
     </RelativeLayout>
 
-
     <com.google.android.gms.maps.MapView
         android:id="@+id/map"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/led_layout"
+        android:layout_below="@+id/seekbar"
         android:layout_marginTop="10dp"/>
+
+    <android.support.v7.widget.AppCompatSeekBar
+        android:id="@+id/seekbar"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginTop="5dp"
+        android:layout_below="@+id/led_layout"/>
 
 </RelativeLayout>
 

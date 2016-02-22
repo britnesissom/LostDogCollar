@@ -1,41 +1,15 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.services;
 
 import android.app.Service;
 import android.content.Intent;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
-import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
+import seniordesign.lostdogcollar.TCPClient;
+
+// TODO: bindService
 public class ServerService extends Service {
-    private Looper mServiceLooper;
-    private ServiceHandler mServiceHandler;
-
-    private final class ServiceHandler extends Handler {
-
-        public ServiceHandler(Looper looper) {
-            super(looper);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            Log.d("ServerService", "handleMessage");
-
-            // start TCPClient here
-            TCPClient tcpClient = TCPClient.getInstance();
-
-            // if tcp client is already running, there's no need to run it again
-            if (!tcpClient.isRunning()) {
-                tcpClient.run();
-            }
-
-            // Stop the service using the startId, so that we don't stop
-            // the service in the middle of handling another job
-            stopSelf(msg.arg1);
-        }
-    }
 
     public ServerService() { }
 
@@ -63,20 +37,19 @@ public class ServerService extends Service {
             @Override
             public void run() {
                 TCPClient tcpClient = TCPClient.getInstance();
-                if (!tcpClient.run()) {
-                    Toast.makeText(getApplicationContext(), "Unable to connect to server", Toast
-                            .LENGTH_SHORT).show();
+                //Log.d("ServerService", "server run");
 
-                    /*Snackbar.make(getActivity().findViewById(R.id.coord_layout),
-                            message, Snackbar
-                            .LENGTH_INDEFINITE)
-                            .setAction("OK", new View.OnClickListener() {
-                                @Override
-                                public void onClick(View view) {
-                                }
-                            }).show();*/
-                }
+                //while (true) {
+                    tcpClient.run();
 
+                    if (!tcpClient.isRunning()) {
+                        Log.d("serverservice", "server not running");
+                        Toast.makeText(getApplicationContext(), "Unable to connect to server", Toast
+                                .LENGTH_SHORT).show();
+
+                        return;
+                    }
+                //}
             }
         });
         thread.start();

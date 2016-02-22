@@ -23,10 +23,8 @@ public class TCPClient {
 
     private static final String TAG = "TCPClient";
 
-    private static final String SERVER_IP = "butterfinger.cs.utexas.edu"; //your computer IP address
-    //private static final String PRIVATE_SERVER_IP = BuildConfig.PRIVATE_SERVER_IP; //your
-    // computer IP address
-    private static final int SERVER_PORT = 12000;
+    private static final String SERVER_IP = "104.237.130.222"; //your computer IP address
+    private static final int SERVER_PORT = 12002;
     // message to send to the server
     private String mServerMessage;
     // sends message received notifications
@@ -38,6 +36,8 @@ public class TCPClient {
     // used to read messages from the server
     private BufferedReader mBufferIn;
     private Socket socket;
+
+    // tracks # of times app tries to reconnect to server
     private int retry = 1;
 
     private static TCPClient tcpClient = null;
@@ -66,7 +66,7 @@ public class TCPClient {
      * @param message text entered by client
      */
     public void sendMessage(String message) {
-        //Log.d(TAG, "Sending message maybe...");
+
         if (mBufferOut != null && !mBufferOut.checkError()) {
             Log.i(TAG, "message should be sending now: " + message);
             mBufferOut.print(message);
@@ -121,49 +121,39 @@ public class TCPClient {
      * Opens socket to communicate with server and closes socket when communication is complete.
      * Sends response from server to listener
      */
-    public boolean run() {
+    public void run() {
 
-        mRun = true;
+        mRun = false;
 
         try {
             //here you must put your computer's IP address.
             InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
 
-            Log.i(TAG, "C: Connecting...");
-
             //create a socket to make the connection with the server
             socket = new Socket(serverAddr, SERVER_PORT);
 
-            Log.i(TAG, "connected");
 
-            //sends the message to the server
+            Log.i(TAG, "run: connected");
+
             mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
 
             //receives the message which the server sends back
             mBufferIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            mRun = true;    // socket attached so connected
 
-            // send login name
-            //sendMessage(Constants.LOGIN_NAME + PreferencesManager.getInstance().getUserName());
-            //sendMessage("Hi");
-            //in this while the client listens for the messages sent by the server
-            /*StringBuilder everything = new StringBuilder();
-            String line;
-            while ((line = mBuff.readLine()) != null) {
-                everything.append(line);
-            }*/
-            //while (mRun) {
-                mServerMessage = mBufferIn.readLine();
-                Log.d(TAG, "server message: " + mServerMessage + ", listener: " + mMessageListener);
+            String line = mBufferIn.readLine();
 
-                if (mServerMessage != null) {
-                    //Log.i(TAG, "Received: " + mServerMessage);
-                }
-                if (mServerMessage != null && mMessageListener != null) {
-                    //Log.i(TAG, "server response: " + mServerMessage);
+            while (line != null) {
+                mServerMessage = line;
+
+                if (mMessageListener != null) {
+                    Log.i(TAG, "server response: " + mServerMessage);
                     //call the method onResponseReceived from MyActivity class
                     mMessageListener.onResponseReceived(mServerMessage);
                 }
-            //}
+
+                line = mBufferIn.readLine();
+            }
 
         } catch (ConnectException e) {
             /*Looper.prepare();
@@ -172,6 +162,7 @@ public class TCPClient {
             Log.d(TAG, "trying to reconnect");
             if (retry < 3) {
                 retry++;
+                Log.i(TAG, "" + retry);
 
                 // try to reconnect after 3 seconds
                 try {
@@ -182,7 +173,7 @@ public class TCPClient {
 
                 run();
             } else {
-                return false;
+                mRun =  false;
             }
 
         } catch (IOException e) {
@@ -194,7 +185,6 @@ public class TCPClient {
             try {
                 if (socket != null) {
                     socket.close();
-                    Log.i(TAG, "Socket closed");
                     retry = 1;
                 }
             }
@@ -203,7 +193,7 @@ public class TCPClient {
             }
         }
 
-        return true;
+        mRun = true;
     }
 
     //Declare the interface. The method onResponseReceived(String message) will must be implemented in the MyActivity

@@ -9,7 +9,7 @@ import android.support.v7.widget.Toolbar;
  */
 public class SettingsBaseFragment extends Fragment {
 
-    public void setupToolbar(Toolbar toolbar, String title) {
+    protected void setupToolbar(Toolbar toolbar, String title) {
         toolbar.setTitle(title);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         toolbar.setSaveEnabled(false); //TODO: look at this later

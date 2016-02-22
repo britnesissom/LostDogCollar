@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -31,6 +32,13 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton;
 
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.login.LoginBehavior;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
 import com.facebook.share.model.ShareLinkContent;
 import com.facebook.share.widget.ShareDialog;
 import com.google.android.gms.common.ConnectionResult;
@@ -44,21 +52,24 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import seniordesign.lostdogcollar.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
-import seniordesign.lostdogcollar.ResponseConverterUtil;
 import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
-import seniordesign.lostdogcollar.async.SendMessageAsyncTask;
 import seniordesign.lostdogcollar.fragments.dialogs.SafeZoneDialogFragment;
+import seniordesign.lostdogcollar.utils.ResponseConverterUtil;
 
 
-// TODO: implement collar LED, notification stopper, response converter for other types
+// TODO: implement notification stopper, response converter for other types
 // TODO: (maybe) implement removal of safezones
 // TODO: update dog's location every 10 seconds
+// TODO: seekbar slide-in animation?
 public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, SafeZoneDialogFragment.OnSendRadiusListener {
 
@@ -70,7 +81,29 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     private GoogleApiClient mGoogleApiClient;
     private List<Geofence> safeZoneList;
     private List<String> safezones;
-    private LatLng dogLastLoc;
+    private LatLng dogLastLoc = null;
+    private CallbackManager callbackManager;
+
+    /**
+     * custom server response class that parses response from server and performs appropriate task
+     */
+    private class MyResponseListener implements OnSendResponseListener {
+        @Override
+        public void onSendResponse(String response) {
+            //Log.i(TAG, "my response listener: " + response);
+            List<String> responses = ResponseConverterUtil.convertResponseToList(response);
+
+            if (responses.get(0).contains("RECORDS")) {
+                responses.remove(0);    // the RECORDS n is unnecessary
+                displayLocation(responses.get(0));  // display dog's last known location
+            }
+            else if (responses.get(0).contains("SAFEZONES")) {
+                responses.remove(0);
+                safezones.addAll(responses);
+                addCircles();
+            }
+        }
+    }
 
     public HomeFragment() {
         // Required empty public constructor
@@ -99,7 +132,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_home, container, false);
-        setupToolbar((Toolbar) getActivity().findViewById(R.id.toolbar), "Lost Dog Collar");
+        setupToolbar((Toolbar) view.findViewById(R.id.toolbar), "Lost Dog Collar");
         setHasOptionsMenu(true);
 
         // MapsInitializer.initialize(getContext());
@@ -140,9 +173,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     // turn light on if switch is on
-                    sendMessage("MESSAGE LIGHT_ON\r\n");
+                    sendMessage("NEW_MESSAGE LIGHT_ON\r\n");
                 } else {
-                    sendMessage("MESSAGE LIGHT_OFF\r\n");
+                    sendMessage("NEW_MESSAGE LIGHT_OFF\r\n");
                 }
             }
         });
@@ -152,6 +185,11 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         return view;
     }
 
+    /**
+     * checks if user's location is enabled on device
+     *
+     * if not enabled, displays dialog to allow user to enable it
+     */
     private void checkLocationServicesEnabled() {
         LocationManager lm = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         boolean gps_enabled = false;
@@ -190,46 +228,74 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         }
     }
 
+
+    /**
+     * initializes map after permission has been granted
+     */
+    public void locationPermissionGranted() {
+        RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "GET_RECORDS 1 ");
+        } else {
+            rsat.execute("GET_RECORDS 1 ");
+        }
+    }
+
+    /**
+     * Displays dog's last known location on map
+     *
+     * @param response response from server containing latest location
+     */
+    private void displayLocation(String response) {
+        List<String> records = ResponseConverterUtil.convertResponseToList(response);
+        //Log.d(TAG, "displayLocation: record 1: " + records.get(0));
+
+        final LatLng latLng = ResponseConverterUtil.convertRecordsString(records.get(0));
+        dogLastLoc = latLng;
+        Log.d(TAG, "latlng: " + latLng);
+
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latLng, 15);
+                map.animateCamera(camera);
+
+                map.addMarker(new MarkerOptions()
+                        .position(latLng)
+                        .title("Last Known Location"));
+            }
+        });
+    }
+
+    /**
+     * listener for map click to begin "add safezone" task
+     */
     private void setOnMapClickListener() {
         map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-                dogLastLoc = latLng;
-                DialogFragment safeZoneDialog = SafeZoneDialogFragment.newInstance();
+                Log.d(TAG, "clicked area: " + latLng);
+                // TODO: change this to seekbar and display dynamically?
+                DialogFragment safeZoneDialog = SafeZoneDialogFragment.newInstance(latLng
+                        .latitude, latLng.longitude);
                 safeZoneDialog.show(getChildFragmentManager(), "dialog");
             }
         });
     }
 
-    private class MyResponseListener implements OnSendResponseListener {
-        @Override
-        public void onSendResponse(String response) {
-            List<String> responses = ResponseConverterUtil.convertResponseToList(response);
-
-            if (responses.get(0).contains("RECORDS")) {
-                responses.remove(0);    // the RECORDS n is unnecessary
-                displayLocation(responses.get(0));  // display dog's last known location
-            }
-            else if (responses.get(0).contains("SAFEZONES")) {
-                responses.remove(0);
-                safezones.addAll(responses);
-                addCircles();
-            }
-        }
-    }
-
     /**
      * Retrieves safezones from server which returns all safezones as string
+     * Uses {@link MyResponseListener} to receive response from server
      */
     private void retrieveSafezones() {
         String message = getResources().getString(R.string.get_safezones);
-        /*RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener
+        RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener
                 ());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
         } else {
             rsat.execute(message);
-        }*/
+        }
     }
 
     /**
@@ -244,10 +310,16 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             final String[] safezone = sz.split("\\s+");
 
             //sc.useDelimiter("\\D*"); // skip everything that is not a digit
+            //Log.d(TAG, "safezone: " + safezone[0]);
 
             // converts safezone[0] into lat lng dogLastLoc
             // TODO: find better way to get dogLastLoc
             final LatLng coords = ResponseConverterUtil.convertCoordsString(safezone[0]);
+
+            // TODO: won't need null check once q problem is fuxed
+            if (coords == null) {
+                return;
+            }
 
             getActivity().runOnUiThread(new Runnable() {
                 @Override
@@ -266,15 +338,19 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     /**
      * sends just created safe zone to server
      *
+     * is called by
+     * {@link seniordesign.lostdogcollar.fragments.dialogs.SafeZoneDialogFragment.OnSendRadiusListener}
+     * from {@link SafeZoneDialogFragment}
+     *
      * @param radius - radius in meters of safe zone
      */
-    public void sendToServer(int radius) {
-        Log.d(TAG, "latlng: " + dogLastLoc.latitude + "," + dogLastLoc.longitude);
-        String message = "SAFEZONE (" + dogLastLoc.latitude + "," + dogLastLoc.longitude + ") " +
-                radius + "\r\n";
+    public void sendSafezoneToServer(int radius, double lat, double longi) {
+        Log.d(TAG, "safezone latlng: " + lat + "," + longi);
+        String message = "NEW_SAFEZONE (" + lat + "," + longi + ")" +
+                " " + radius + "\r\n";
 
         map.addCircle(new CircleOptions()
-                .center(dogLastLoc)
+                .center(new LatLng(lat, longi))
                 .radius(radius)
                 .fillColor(0x44ff0000)
                 .strokeColor(0xffff0000)
@@ -283,13 +359,17 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         sendMessage(message);
     }
 
+    /**
+     * sends message to server for storage
+     *
+     * @param message - command to be sent to server
+     */
     private void sendMessage(String message) {
-        SendMessageAsyncTask smat = new SendMessageAsyncTask();
-
+        RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            smat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
+            rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
         } else {
-            smat.execute(message);
+            rsat.execute(message);
         }
     }
 
@@ -305,8 +385,82 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 }).show();
     }
 
+    /**
+     * Open Facebook share dialog to allow user to post pet's last known location to Facebook
+     */
+    private void postToFacebook() {
+        if (checkIfLoggedIn()) {
+            ShareDialog share = new ShareDialog(this);
+            if (ShareDialog.canShow(ShareLinkContent.class)) {
+
+                ShareLinkContent linkContent = new ShareLinkContent.Builder()
+                        .setContentTitle("My Dog's Location")
+                        .setContentDescription("This is where my dog was last seen")
+                        .setContentUrl(Uri.parse("https://www.google.com/maps/?q=" + dogLastLoc.latitude
+                                + "," + dogLastLoc.longitude))
+                        /*.setContentUrl(Uri.parse("https://www.google.com/maps/?q=30,90"))*/
+                        .build();
+
+                share.show(linkContent);
+            }
+        }
+        else {
+            Log.i(TAG, "not logged into facebook");
+            Snackbar.make(getActivity().findViewById(R.id.coord_layout), "Please log into " +
+                    "Facebook to share", Snackbar.LENGTH_INDEFINITE)
+                    .setAction("Log In", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            logIntoFacebook();
+                        }
+                    }).show();
+        }
+    }
+
+    private void logIntoFacebook() {
+        LoginManager loginManager = LoginManager.getInstance();
+
+        Collection<String> permissions = Collections.singletonList("publish_actions");
+        loginManager.setLoginBehavior(LoginBehavior.NATIVE_WITH_FALLBACK)
+                .logInWithPublishPermissions(this, permissions);
+
+        callbackManager = CallbackManager.Factory.create();
+        loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+
+                AccessToken token = loginResult.getAccessToken();
+                SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
+                        .shared_prefs), 0);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putString("accessToken", token.getToken());
+                editor.apply();
+
+                postToFacebook();
+            }
+
+            @Override
+            public void onCancel() {
+                Log.d(TAG, "login cancelled");
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                Log.d(TAG, error.getMessage());
+            }
+        });
+    }
+
+    private boolean checkIfLoggedIn() {
+        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
+                .shared_prefs), 0);
+
+        return prefs.getString("accessToken", null) != null;
+    }
+
     @Override
     public void onConnected(Bundle connectionHint) {
+
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             locationPermissionGranted();
@@ -348,6 +502,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     public void onConnectionSuspended(int i) {
         // I don't know what to do here
 
+
     }
 
     @Override
@@ -370,61 +525,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 break;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    /**
-     * Open Facebook share dialog to allow user to post pet's last known location to Facebook
-     */
-    private void postToFacebook() {
-        ShareDialog share = new ShareDialog(this);
-        if (ShareDialog.canShow(ShareLinkContent.class)) {
-
-            ShareLinkContent linkContent = new ShareLinkContent.Builder()
-                    .setContentTitle("My Dog's Location")
-                    .setContentDescription("This is where my dog was last seen")
-                    .setContentUrl(Uri.parse("https://www.google.com/maps/?q=" + dogLastLoc.latitude
-                            + "," + dogLastLoc.longitude))
-                    .build();
-
-            share.show(linkContent);
-        }
-    }
-
-    /**
-     * initializes map after permission has been granted
-     */
-    public void locationPermissionGranted() {
-        try {
-            // TODO: change location to pet's last location, not yours
-            /*map.setMyLocationEnabled(true);
-            location = LocationServices.FusedLocationApi.getLastLocation(
-                    mGoogleApiClient);*/
-            RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "GET_RECORDS 1 ");
-            } else {
-                rsat.execute("GET_RECORDS 1 ");
-            }
-        }
-        catch (SecurityException e) {
-            Log.e(TAG, "this error should not occur because permission has already " +
-                    "been granted");
-            Log.e(TAG, e.getMessage());
-        }
-    }
-
-    private void displayLocation(String response) {
-        List<String> records = ResponseConverterUtil.convertResponseToList(response);
-        Log.d(TAG, "displayLocation: record 1: " + records.get(0));
-        //records.remove(0);  // remove the "RECORDS n" message
-        //Log.d(TAG, "record 1: " + records.get(0));
-
-        for (String record : records) {
-            LatLng latLng = ResponseConverterUtil.convertCoordsString(record);
-            Log.d(TAG, "latlng: " + latLng);
-            CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latLng, 15);
-            map.animateCamera(camera);
-        }
     }
 
     @Override
@@ -475,5 +575,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 }
             }
         }
+        else {
+            callbackManager.onActivityResult(requestCode, resultCode, data);
+        }
+
     }
 }
