@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_id": "vertical-vault-118015",
+    "project_number": "484752420699",
+    "name": "Lost Dog Collar"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:484752420699:android:1cfb101ea5fba32b",
+        "client_id": "android:seniordesign.lostdogcollar",
+        "client_type": 1,
+        "android_client_info": {
+          "package_name": "seniordesign.lostdogcollar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "484752420699-alto475oal0s6gk7s7e0j583c28b3hpt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "seniordesign.lostdogcollar",
+            "certificate_hash": "A931405BCBE4030577B14E93F4EED0A5C1C59C8F"
+          }
+        },
+        {
+          "client_id": "484752420699-oi6a3fpd0tilska4vpkbifotqeeu3icu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "cloud_messaging_service": {
+          "status": 2,
+          "apns_config": []
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "google_signin_service": {
+          "status": 2
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "client_info": [],
+  "ARTIFACT_VERSION": "1"
+}
