@@ -62,6 +62,7 @@ import java.util.List;
 import seniordesign.lostdogcollar.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
 import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
+import seniordesign.lostdogcollar.fragments.dialogs.AddCollarDialogFragment;
 import seniordesign.lostdogcollar.fragments.dialogs.SafeZoneDialogFragment;
 import seniordesign.lostdogcollar.utils.ResponseConverterUtil;
 
@@ -560,6 +561,12 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                         .commit();
                 break;
             }
+
+            case R.id.app_add_collar:
+                DialogFragment addCollarDialog = AddCollarDialogFragment.newInstance();
+                addCollarDialog.show(getFragmentManager(), "dialog");
+                break;
+
             case R.id.post_to_fb:
                 postToFacebook();
                 break;
