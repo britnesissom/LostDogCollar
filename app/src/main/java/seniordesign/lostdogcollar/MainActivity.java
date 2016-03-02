@@ -5,11 +5,9 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.MenuItem;
 
 import com.facebook.appevents.AppEventsLogger;
 
-import seniordesign.lostdogcollar.fragments.HomeFragment;
 import seniordesign.lostdogcollar.fragments.LoginFragment;
 import seniordesign.lostdogcollar.services.ServerService;
 
@@ -23,11 +21,10 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, ServerService.class);
         startService(intent);
 
-        if (savedInstanceState == null) {
-            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            transaction.replace(R.id.content_frag, LoginFragment.newInstance());
-            transaction.commit();
-        }
+
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.content_frag, LoginFragment.newInstance());
+        transaction.commit();
     }
 
     @Override
@@ -55,20 +52,5 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = new Intent(this, ServerService.class);
         stopService(intent);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        if(item.getItemId() == android.R.id.home){
-            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            transaction.replace(R.id.content_frag, HomeFragment.newInstance());
-            transaction.commit();
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 }

@@ -104,7 +104,7 @@ public class SettingsPageFragment extends SettingsBaseFragment implements Adapte
                 // App code
                 AccessToken token = loginResult.getAccessToken();
                 SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
-                        .shared_prefs), 0);
+                        .prefs_name), 0);
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putString("accessToken", token.getToken());
                 editor.apply();
@@ -140,7 +140,8 @@ public class SettingsPageFragment extends SettingsBaseFragment implements Adapte
     }
 
     private void saveWifiEnabledOption(boolean isChecked) {
-        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string.shared_prefs), 0);
+        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string.prefs_name),
+                0);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean("wifiEnabled", isChecked);
         editor.apply();
@@ -149,7 +150,8 @@ public class SettingsPageFragment extends SettingsBaseFragment implements Adapte
     // retrieve saved wifi on/off state from SharedPreferences so user does not have to turn wifi
     // on every time they open the app
     private void getWifiSwitchState(SwitchCompat wifiSwitch, View view) {
-        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string.shared_prefs), 0);
+        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string.prefs_name),
+                0);
         boolean isChecked = prefs.getBoolean("wifiEnabled", false);
         wifiSwitch.setChecked(isChecked);
 

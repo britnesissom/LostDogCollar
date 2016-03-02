@@ -1,9 +1,9 @@
 package seniordesign.lostdogcollar.fragments;
 
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
@@ -11,25 +11,21 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
 
 import seniordesign.lostdogcollar.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
 import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
 
-public class LoginFragment extends Fragment implements GoogleApiClient.OnConnectionFailedListener {
+public class LoginFragment extends Fragment {
 
     private static final String TAG = "LoginFrag";
 
-    private GoogleApiClient mGoogleApiClient;
-    private GoogleSignInOptions gso;
-    private static final int RC_SIGN_IN = 9001;
+    private boolean rememberUser = false;
 
     public LoginFragment() {
         // Required empty public constructor
@@ -40,81 +36,10 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        // Configure sign-in to request the user's ID, email address, and basic
-// profile. ID and basic profile are included in DEFAULT_SIGN_IN.
-        /*gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .build();
-
-        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                .enableAutoManage(getActivity() *//* FragmentActivity *//*, this *//* OnConnectionFailedListener *//*)
-                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
-                .build();*/
-        // [END build_client]
-
-
-        // automatically sign user in
-        /*OptionalPendingResult<GoogleSignInResult> pendingResult =
-                Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient);
-
-        if (pendingResult.isDone()) {
-            // There's immediate result available.
-            checkIfPrevSignIn(pendingResult.get());
-        } else {
-            // There's no immediate result ready, displays some progress indicator and waits for the
-            // async callback.
-            pendingResult.setResultCallback(new ResultCallback<GoogleSignInResult>() {
-                @Override
-                public void onResult(@NonNull GoogleSignInResult result) {
-                    checkIfPrevSignIn(result);
-                }
-            });
-        }*/
-
-
-    }
-
-    /*private void checkIfPrevSignIn(GoogleSignInResult result) {
-        GoogleSignInAccount acct = result.getSignInAccount();
-
-        if (acct != null) {
-            sendRegToServer(acct);
-        }
-    }*/
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_login, container, false);
-
-        // [START customize_button]
-        // Customize sign-in button. The sign-in button can be displayed in
-        // multiple sizes and color schemes. It can also be contextually
-        // rendered based on the requested scopes. For example. a red button may
-        // be displayed when Google+ scopes are requested, but a white button
-        // may be displayed when only basic profile is requested. Try adding the
-        // Scopes.PLUS_LOGIN scope to the GoogleSignInOptions to see the
-        // difference.
-        /*SignInButton signInButton = (SignInButton) view.findViewById(R.id.google_signin);
-        signInButton.setSize(SignInButton.SIZE_WIDE);
-        signInButton.setScopes(gso.getScopeArray());
-
-        signInButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
-                startActivityForResult(signInIntent, RC_SIGN_IN);
-            }
-        });*/
 
         TextView createAcct = (TextView) view.findViewById(R.id.create_acct_btn);
         createAcct.setOnClickListener(new View.OnClickListener() {
@@ -128,28 +53,54 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
             }
         });
 
-        final EditText username = (EditText) view.findViewById(R.id.username);
-        final EditText password = (EditText) view.findViewById(R.id.password);
+        CheckBox checkbox = (CheckBox) view.findViewById(R.id.remember_user_check);
+        checkbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    rememberUser = true;
+                }
+            }
+        });
+
+        final EditText usernameEditText = (EditText) view.findViewById(R.id.username);
+        final EditText passwordEditText = (EditText) view.findViewById(R.id.password);
 
         Button signInBtn = (Button) view.findViewById(R.id.signin);
         signInBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // check sign in credentials
-                checkSignIn(username.getText().toString(), password.getText().toString());
+                checkSignIn(usernameEditText.getText().toString(), passwordEditText.getText()
+                        .toString());
             }
         });
+
+
+        SharedPreferences prefs = getActivity().getSharedPreferences(getResources().getString(R
+                .string.prefs_name), 0);
+
+        String username = prefs.getString("username", null);
+        String password = prefs.getString("password", null);
+
+        // if user isn't remembered, send to login screen
+        // else, send to home screen
+        if (username != null && password != null) {
+            usernameEditText.setText(username);
+            passwordEditText.setText(password);
+            checkbox.setChecked(true);
+        }
 
         return view;
     }
 
-    private void checkSignIn(String username, String password) {
-        String message = "LOGIN "+ username + " " + password + "\r\n";
+    private void checkSignIn(final String username, final String password) {
+        String message = "LOGIN "+ username + " " + password;
 
         RetrieveFromServerAsyncTask rfsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
             @Override
             public void onSendResponse(String response) {
-                checkLoginResponse(response);
+                checkLoginResponse(username, password, response);
             }
         });
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -159,18 +110,27 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
         }
     }
 
-    private void checkLoginResponse(String response) {
+    private void checkLoginResponse(String username, String password, String response) {
         switch(response) {
             case "INVALID USERNAME":
-                Toast.makeText(getContext(), "Invalid username", Toast.LENGTH_SHORT).show();
+                runOnUi(response);
                 break;
             case "INVALID PASSWORD":
-                Toast.makeText(getContext(), "Invalid password", Toast.LENGTH_SHORT).show();
+                runOnUi(response);
                 break;
             case "SUCCESS":
+                if (rememberUser) {
+                    SharedPreferences prefs = getActivity().getSharedPreferences(getResources()
+                            .getString(R.string.prefs_name), 0);
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putString("username", username);
+                    editor.putString("password", password);
+                    editor.apply();
+                }
+
                 FragmentTransaction transaction = getActivity().getSupportFragmentManager()
                         .beginTransaction();
-                transaction.replace(R.id.content_frag, HomeFragment.newInstance());
+                transaction.replace(R.id.content_frag, HomeFragment.newInstance(username));
                 transaction.commit();
                 break;
             default:
@@ -179,41 +139,12 @@ public class LoginFragment extends Fragment implements GoogleApiClient.OnConnect
         }
     }
 
-/*    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
-        if (requestCode == RC_SIGN_IN) {
-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            handleSignInResult(result);
-        }
+    private void runOnUi(final String message) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
-
-    private void sendRegToServer(GoogleSignInAccount acct) {
-        Intent intent = new Intent(getContext(), RegistrationIntentService.class);
-
-        // TODO: change to acct.getIdToken() for security
-        intent.putExtra("user", acct.getEmail());
-        //intent.putExtra("username", )
-        getActivity().startService(intent);
-
-        FragmentTransaction transaction = getActivity().getSupportFragmentManager()
-                .beginTransaction();
-        transaction.replace(R.id.content_frag, HomeFragment.newInstance());
-        transaction.commit();
-    }
-
-    private void handleSignInResult(GoogleSignInResult result) {
-        Log.d("LoginFragment", "handleSignInResult:" + result.isSuccess());
-        if (result.isSuccess()) {
-            // Signed in successfully, show authenticated UI.
-            GoogleSignInAccount acct = result.getSignInAccount();
-            sendRegToServer(acct);
-
-        } else {
-            // Signed out, show unauthenticated UI.
-            //updateUI(false);
-        }
-    }*/
 }

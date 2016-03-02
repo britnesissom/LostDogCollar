@@ -64,7 +64,7 @@ public class CreateAcctFragment extends Fragment {
 
             FragmentTransaction transaction = getActivity().getSupportFragmentManager()
                     .beginTransaction();
-            transaction.replace(R.id.content_frag, HomeFragment.newInstance());
+            transaction.replace(R.id.content_frag, HomeFragment.newInstance(username));
             transaction.commit();
         }
     }

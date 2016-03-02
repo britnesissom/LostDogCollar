@@ -73,8 +73,12 @@ import seniordesign.lostdogcollar.utils.ResponseConverterUtil;
 public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, SafeZoneDialogFragment.OnSendRadiusListener {
 
+    private static final String USERNAME = "username";
+
     private static final int RESOLVE_ERROR_CODE = 1001;
     private static final String TAG = "HomeFragment";
+
+    private String username;
 
     private MapView mapView;
     private GoogleMap map;
@@ -91,16 +95,28 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         @Override
         public void onSendResponse(String response) {
             //Log.i(TAG, "my response listener: " + response);
-            List<String> responses = ResponseConverterUtil.convertResponseToList(response);
 
-            if (responses.get(0).contains("RECORDS")) {
-                responses.remove(0);    // the RECORDS n is unnecessary
-                displayLocation(responses.get(0));  // display dog's last known location
-            }
-            else if (responses.get(0).contains("SAFEZONES")) {
-                responses.remove(0);
-                safezones.addAll(responses);
-                addCircles();
+            if (response.contains("MORE RECORDS")) {
+                Snackbar.make(getActivity().findViewById(R.id.coord_layout), "No previous " +
+                        "locations found for dog", Snackbar.LENGTH_INDEFINITE)
+                        .setAction("OK", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {}
+                        }).show();
+            } else {
+
+                List<String> responses = ResponseConverterUtil.convertResponseToList(response);
+
+                if (responses.get(0).contains("RECORDS")) {
+
+                    // TODO: change this because collar id's are necessary now
+                    responses.remove(0);    // the RECORDS n is unnecessary
+                    displayLocation(responses.get(0));  // display dog's last known location
+                } else if (responses.get(0).contains("SAFEZONES")) {
+                    responses.remove(0);
+                    safezones.addAll(responses);
+                    addCircles();
+                }
             }
         }
     }
@@ -109,13 +125,22 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         // Required empty public constructor
     }
 
-    public static HomeFragment newInstance() {
-        return new HomeFragment();
+    public static HomeFragment newInstance(String username) {
+        HomeFragment fragment = new HomeFragment();
+        Bundle args = new Bundle();
+        args.putString(USERNAME, username);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) {
+            username = getArguments().getString(USERNAME);
+        }
+
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(getContext())
                     .addConnectionCallbacks(this)
@@ -125,6 +150,15 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         }
         setmResolvingError(false);
         safezones = new ArrayList<>();
+
+        // sleep so user has time to register
+        // TODO: find better way to do this
+        try {
+            Thread.sleep(1000);
+        }
+        catch (InterruptedException e) {
+            Log.e(TAG, e.getMessage());
+        }
     }
 
     @Override
@@ -235,7 +269,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     public void locationPermissionGranted() {
         RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "GET_RECORDS 1 ");
+            rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "GET_RECORDS 0 1 ");
         } else {
             rsat.execute("GET_RECORDS 0 1 ");
         }
@@ -288,7 +322,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
      * Uses {@link MyResponseListener} to receive response from server
      */
     private void retrieveSafezones() {
-        String message = getResources().getString(R.string.get_safezones);
+        String message = "GET_SAFEZONES 0 \r\n";
         RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener
                 ());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -346,7 +380,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
      */
     public void sendSafezoneToServer(int radius, double lat, double longi) {
         Log.d(TAG, "safezone latlng: " + lat + "," + longi);
-        String message = "NEW_SAFEZONE (" + lat + "," + longi + ")" +
+
+        // TODO: implement collar id stuff
+        String message = "NEW_SAFEZONE " + "0" + " (" + lat + "," + longi + ")" +
                 " " + radius + "\r\n";
 
         map.addCircle(new CircleOptions()
@@ -431,7 +467,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
                 AccessToken token = loginResult.getAccessToken();
                 SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
-                        .shared_prefs), 0);
+                        .prefs_name), 0);
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putString("accessToken", token.getToken());
                 editor.apply();
@@ -452,14 +488,17 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     }
 
     private boolean checkIfLoggedIn() {
-        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
-                .shared_prefs), 0);
+        SharedPreferences prefs = getActivity().getSharedPreferences(getResources().getString(R
+                .string.prefs_name), 0);
 
         return prefs.getString("accessToken", null) != null;
     }
 
     @Override
     public void onConnected(Bundle connectionHint) {
+        Log.d(TAG, "onConnected");
+
+        // TODO: sharedprefs for loading safezones?; ondestroy sets this pref to false
 
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -514,15 +553,49 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.app_settings:
+            case R.id.app_settings: {
                 FragmentTransaction transaction = getFragmentManager().beginTransaction();
                 transaction.addToBackStack(null);
                 transaction.replace(R.id.content_frag, SettingsPageFragment.newInstance())
                         .commit();
                 break;
+            }
             case R.id.post_to_fb:
                 postToFacebook();
                 break;
+
+            case R.id.app_logout: {
+
+                // forget user after logout
+                SharedPreferences prefs = getActivity().getSharedPreferences(getResources()
+                        .getString(R.string.prefs_name), 0);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.clear();
+                editor.apply();
+
+                String message = "LOGOUT " + username;
+
+                RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
+                    @Override
+                    public void onSendResponse(String response) {
+                        if (response.equals("OK")) {
+                            FragmentTransaction transaction = getFragmentManager().beginTransaction();
+                            transaction.replace(R.id.content_frag, LoginFragment.newInstance())
+                                    .commit();
+                        }
+                        else {
+                            Log.d(TAG, "could not log out: " + response);
+                        }
+                    }
+                });
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                    rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
+                } else {
+                    rsat.execute(message);
+                }
+
+                break;
+            }
         }
         return super.onOptionsItemSelected(item);
     }
@@ -576,6 +649,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             }
         }
         else {
+            if (callbackManager == null) {
+                callbackManager = CallbackManager.Factory.create();
+            }
             callbackManager.onActivityResult(requestCode, resultCode, data);
         }
 
