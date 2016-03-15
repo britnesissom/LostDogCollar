@@ -9,4 +9,9 @@
         <item name="android:windowNoTitle">true</item>
     </style>
 
+    <style name="ColoredButton" parent="Widget.AppCompat.Button">
+        <item name="colorButtonNormal">@color/colorAccent</item>
+        <item name="android:textColor">#fff</item>
+    </style>
+
 </resources>

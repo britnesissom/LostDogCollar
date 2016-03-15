@@ -28,7 +28,7 @@
 
     <string name="safe_zone_rad">Radius (in meters)</string>
     <string name="collar_id">Collar ID</string>
-    <string name="collar_name">Dog's Name</string>
+    <string name="collar_name">Dog\'s Name</string>
 
     <string name="sign_in">Sign In</string>
     <string name="sign_up">Sign Up</string>
@@ -38,6 +38,9 @@
     <string name="remember">Remember Me</string>
 
     <string name="prefs_name">DogWatchrPrefs</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 
 </resources>

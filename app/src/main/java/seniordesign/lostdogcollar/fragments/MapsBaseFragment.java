@@ -1,12 +1,18 @@
 package seniordesign.lostdogcollar.fragments;
 
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -28,6 +34,51 @@ public abstract class MapsBaseFragment extends Fragment {
         toolbar.setTitle(title);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         toolbar.setSaveEnabled(false); //TODO: look at this later
+    }
+
+    /**
+     * checks if user's location is enabled on device
+     *
+     * if not enabled, displays dialog to allow user to enable it
+     */
+    protected void checkLocationServicesEnabled() {
+        LocationManager lm = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+        boolean gps_enabled = false;
+        boolean network_enabled = false;
+
+        try {
+            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch (Exception ex) {
+        }
+
+        try {
+            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch (Exception ex) {
+        }
+
+        if (!gps_enabled && !network_enabled) {
+            // notify user
+            AlertDialog.Builder dialog = new AlertDialog.Builder(getContext());
+            dialog.setMessage("Location Services are not enabled. Please enable them to use this " +
+                    "application.");
+            dialog.setPositiveButton("ENABLE", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    getContext().startActivity(myIntent);
+                    //get gps
+                }
+            });
+            dialog.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    // close app since we cannot use location
+                    getActivity().finish();
+                    System.exit(0);
+                }
+            });
+            dialog.show();
+        }
     }
 
     /* Creates a dialog for an error message */

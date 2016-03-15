@@ -4,11 +4,13 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
@@ -37,24 +39,20 @@ public class MyGcmListenerService extends GcmListenerService {
         Log.d(TAG, "From: " + from);
         Log.d(TAG, "Message: " + message);
 
-        if (from.startsWith("/topics/")) {
-            // message received from some topic.
-        } else {
-            // normal downstream message.
+        if (message != null && message.contains("is lost")) {
+            // broadcastreceiver to send message to homefragment to update location
+            // every 10 seconds
+            SharedPreferences prefs = getSharedPreferences(getString(R.string.prefs_name), 0);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putInt("notifTime", 10000);
+            editor.apply();
+
+            Intent intent = new Intent();
+            intent.putExtra("notifTime", 10000);
+            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
         }
 
         // [START_EXCLUDE]
-        /**
-         * Production applications would usually process the message here.
-         * Eg: - Syncing with server.
-         *     - Store message in local database.
-         *     - Update UI.
-         */
-
-        /**
-         * In some cases it may be useful to show a notification indicating to the user
-         * that a message was received.
-         */
         sendNotification(message);
         // [END_EXCLUDE]
     }
@@ -74,11 +72,12 @@ public class MyGcmListenerService extends GcmListenerService {
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.cast_ic_notification_0)    // TODO: change icon
-                .setContentTitle("Lost Dog Collar")
+                .setSmallIcon(R.drawable.ldcicon)
+                .setContentTitle(getString(R.string.app_name))
                 .setContentText(message)
                 .setAutoCancel(true)
                 .setSound(defaultSoundUri)
+                .setVibrate(new long[]{500, 1000, 500, 1000, 500, 1000})
                 .setLights(Color.parseColor("#8C00FF"), 300, 1500)
                 .setContentIntent(pendingIntent);
 

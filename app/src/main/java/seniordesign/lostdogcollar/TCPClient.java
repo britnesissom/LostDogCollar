@@ -161,21 +161,21 @@ public class TCPClient {
             final Handler handler = new Handler();*/
 
             Log.d(TAG, "trying to reconnect");
-            if (retry < 3) {
+            /*if (retry < 3) {
                 retry++;
-                Log.i(TAG, "" + retry);
+                Log.i(TAG, "" + retry);*/
 
                 // try to reconnect after 3 seconds
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(5000);
                 } catch (InterruptedException ie) {
                     Log.d(TAG, "interruptedexception");
                 }
 
                 run();
-            } else {
+            /*} else {
                 mRun =  false;
-            }
+            }*/
 
         } catch (IOException e) {
             Log.e(TAG, "S: Error", e);

@@ -4,6 +4,13 @@
       tools:context="seniordesign.lostdogcollar.MainActivity">
 
     <item
+        android:id="@+id/refresh_map"
+        android:orderInCategory="100"
+        android:title="Refresh Map"
+        android:icon="@drawable/ic_refresh"
+        app:showAsAction="always"/>
+
+    <item
         android:id="@+id/post_to_fb"
         android:orderInCategory="100"
         android:title="Share"

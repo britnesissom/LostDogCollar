@@ -2,6 +2,8 @@ package seniordesign.lostdogcollar.fragments;
 
 
 import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -10,8 +12,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
+import seniordesign.lostdogcollar.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
+import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
 import seniordesign.lostdogcollar.services.RegistrationIntentService;
 
 /**
@@ -22,6 +27,8 @@ import seniordesign.lostdogcollar.services.RegistrationIntentService;
 public class CreateAcctFragment extends Fragment {
 
     private static final String TAG = "CreateAcctFrag";
+
+    private EditText usernameEdit;
 
     public CreateAcctFragment() {
         // Required empty public constructor
@@ -37,7 +44,7 @@ public class CreateAcctFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_create_acct, container, false);
 
-        final EditText username = (EditText) view.findViewById(R.id.username);
+        usernameEdit = (EditText) view.findViewById(R.id.username);
         final EditText password = (EditText) view.findViewById(R.id.password);
         final EditText confirm = (EditText) view.findViewById(R.id.confirm_password);
 
@@ -46,7 +53,8 @@ public class CreateAcctFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 // check sign in credentials
-                checkSignUp(username.getText().toString(), password.getText().toString(), confirm
+                checkSignUp(usernameEdit.getText().toString(), password.getText().toString(),
+                        confirm
                         .getText().toString());
             }
         });
@@ -54,7 +62,35 @@ public class CreateAcctFragment extends Fragment {
         return view;
     }
 
-    private void checkSignUp(String username, String password, String confirmPwd) {
+    private void checkSignUp(final String username, final String password, final String
+            confirmPwd) {
+
+        String message = "USERNAME_AVAIL " + username + "\r\n";
+
+        RetrieveFromServerAsyncTask rfsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
+            @Override
+            public void onSendResponse(String response) {
+                if (response.contains("unavail")) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getContext(), "Username taken", Toast.LENGTH_SHORT).show();
+                            usernameEdit.setText("");
+                        }
+                    });
+                } else {
+                    checkPassword(username, password, confirmPwd);
+                }
+            }
+        });
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            rfsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
+        } else {
+            rfsat.execute(message);
+        }
+    }
+
+    private void checkPassword(String username, String password, String confirmPwd) {
         if (password.equals(confirmPwd)) {
             Intent intent = new Intent(getContext(), RegistrationIntentService.class);
 
@@ -68,5 +104,4 @@ public class CreateAcctFragment extends Fragment {
             transaction.commit();
         }
     }
-
 }

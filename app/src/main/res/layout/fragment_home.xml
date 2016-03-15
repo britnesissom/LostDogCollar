@@ -1,10 +1,11 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:animateLayoutChanges="true">
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <include layout="@layout/app_bar"
-        android:id="@+id/app_bar"/>
+             android:id="@+id/app_bar"/>
 
     <LinearLayout
         android:id="@+id/buttons"
@@ -12,9 +13,9 @@
         android:layout_below="@+id/app_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true">
+        android:layout_gravity="center_horizontal">
 
-        <Button
+        <android.support.v7.widget.AppCompatButton
             android:id="@+id/stop_notifs_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -22,63 +23,39 @@
             android:elevation="2dp"
             android:paddingEnd="16dp"
             android:paddingStart="16dp"
-            style="@style/Widget.AppCompat.Button.Colored"/>
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_marginRight="10dp"/>
+        <!--android:theme="@style/ColoredButton"
+        android:background="@color/colorAccent"-->
 
-        <Button
-            android:id="@+id/add_sz_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/add_sz"
-            android:elevation="2dp"
-            android:paddingEnd="16dp"
-            android:paddingStart="16dp"
-            style="@style/Widget.AppCompat.Button.Colored"/>
+        <RelativeLayout
+            android:id="@+id/led_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/led_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/led"
+                android:textSize="16sp"/>
+
+            <android.support.v7.widget.SwitchCompat
+                android:id="@+id/led_switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@+id/led_text"
+                android:layout_marginLeft="10dp"/>
+
+        </RelativeLayout>
 
     </LinearLayout>
 
+    <include layout="@layout/multiple_maps_layout"
+             android:id="@+id/multiple_maps"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:layout_marginTop="10dp"/>
 
-    <RelativeLayout
-        android:id="@+id/led_layout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/buttons"
-        android:layout_marginTop="10dp">
-
-        <TextView
-            android:id="@+id/led_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/led"
-            android:textSize="16sp"
-            android:layout_centerVertical="true"/>
-
-        <android.support.v7.widget.SwitchCompat
-            android:id="@+id/led_switch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toRightOf="@+id/led_text"
-            android:layout_marginLeft="10dp"/>
-
-    </RelativeLayout>
-
-    <com.google.android.gms.maps.MapView
-        android:id="@+id/map"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@+id/seekbar"
-        android:layout_marginTop="10dp"/>
-
-    <android.support.v7.widget.AppCompatSeekBar
-        android:id="@+id/seekbar"
-        android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
-        android:layout_marginTop="5dp"
-        android:layout_below="@+id/led_layout"/>
-
-</RelativeLayout>
-
-
+</LinearLayout>

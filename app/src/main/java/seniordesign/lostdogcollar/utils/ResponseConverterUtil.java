@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import seniordesign.lostdogcollar.Collar;
+
 /**
  * Created by britne on 1/28/16.
  */
@@ -57,6 +59,21 @@ public class ResponseConverterUtil {
         String[] recordArray = record.split("\t");
         List<String> list = new ArrayList<>();
         Collections.addAll(list, recordArray);
+
+        return list;
+    }
+
+    public static List<Collar> convertResponseToCollarList(String collars) {
+        String[] collarArray = collars.split("\t");
+        List<Collar> list = new ArrayList<>();
+
+        for (int i = 1; i < collarArray.length; i+= 1) {
+            // collarInfo[0] - collar id
+            // collarInfo[1] - collar name
+            String[] collarInfo = collarArray[i].split(" ");
+            Collar collar = new Collar(Integer.parseInt(collarInfo[0]), collarInfo[1]);
+            list.add(collar);
+        }
 
         return list;
     }

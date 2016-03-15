@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.gms.maps.MapView
+        android:id="@+id/map"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    
+    <LinearLayout
+        android:id="@+id/bottom_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        android:minHeight="48dp"
+        app:behavior_peekHeight="48dp"
+        app:layout_behavior="android.support.design.widget.BottomSheetBehavior"
+        android:orientation="vertical">
+
+    <RelativeLayout
+        android:id="@+id/view_collars_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#fff"
+        android:elevation="4dp">
+
+        <TextView
+            android:id="@+id/collars_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:text="Collars"
+            android:textSize="22sp"
+            android:textColor="#000"
+            android:paddingLeft="16dp"/>
+
+        <ImageView
+            android:id="@+id/view_collar_list_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_alignParentRight="true"
+            android:contentDescription="View Collar List"
+            android:src="@drawable/ic_arrow_drop_up"
+            style="@style/Widget.AppCompat.Button.Borderless"/>
+    </RelativeLayout>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/collar_rv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+</android.support.design.widget.CoordinatorLayout>

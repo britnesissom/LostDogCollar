@@ -37,7 +37,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal">
 
-        <EditText
+        <android.support.v7.widget.AppCompatEditText
             android:id="@+id/username"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -50,7 +50,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal">
 
-        <EditText
+        <android.support.v7.widget.AppCompatEditText
             android:id="@+id/password"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -77,7 +77,7 @@
             android:text="@string/remember"/>
     </LinearLayout>
 
-    <Button
+    <android.support.v7.widget.AppCompatButton
         android:id="@+id/signin"
         android:layout_width="300dp"
         android:layout_height="wrap_content"
@@ -85,6 +85,9 @@
         android:layout_marginTop="10dp"
         android:layout_gravity="center_horizontal"
         style="@style/Widget.AppCompat.Button.Colored"/>
+        <!--android:theme="@style/ColoredButton"
+        android:background="@color/colorAccent"
+        />-->
 
     <LinearLayout
         android:layout_gravity="center_horizontal"
