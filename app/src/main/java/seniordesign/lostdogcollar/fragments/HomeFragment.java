@@ -67,9 +67,9 @@ import java.util.List;
 
 import seniordesign.lostdogcollar.Collar;
 import seniordesign.lostdogcollar.CollarListRVAdapter;
-import seniordesign.lostdogcollar.MyResponseListener;
-import seniordesign.lostdogcollar.OnDisplayMapListener;
-import seniordesign.lostdogcollar.OnSendResponseListener;
+import seniordesign.lostdogcollar.listeners.MyResponseListener;
+import seniordesign.lostdogcollar.listeners.OnDisplayMapListener;
+import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
 import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
 import seniordesign.lostdogcollar.fragments.dialogs.AddCollarDialogFragment;
@@ -81,7 +81,6 @@ import seniordesign.lostdogcollar.utils.ResponseConverterUtil;
 // TODO: (maybe) implement removal of safezones
 // TODO: update dog's location every 10 seconds
 // TODO: callback for when login/register message actually received instead of doing thread.sleep
-// TODO: swipe to refresh for new locations/safezones
 public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, SafeZoneDialogFragment.OnSendRadiusListener,
         OnDisplayMapListener, CollarListRVAdapter.OnSendCollarIdListener {
@@ -151,7 +150,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         collarId = -1;
 
         adapter = new CollarListRVAdapter(collarList, getContext(), this);
-        initCollarList();
+        //initCollarList();
 
         lbm = LocalBroadcastManager.getInstance(getContext());
         lbm.registerReceiver(receiver, new IntentFilter("update-notif-prefs"));
@@ -175,13 +174,13 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             @Override
             public void onClick(View v) {
                 Log.d(TAG, "relative layout onclick");
-                if (behavior.getState() == BottomSheetBehavior.STATE_HIDDEN) {
-                    Log.d(TAG, "hidden state");
+                Log.d(TAG, "" + behavior.getState());
+                if (behavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
                     behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
                     image.setImageResource(R.drawable.ic_arrow_drop_down);
                 } else if (behavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
                     Log.d(TAG, "expanded state");
-                    behavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+                    behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                     image.setImageResource(R.drawable.ic_arrow_drop_up);
                 }
             }
@@ -250,26 +249,31 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
             @Override
             public void onSendResponse(String response) {
+                //Log.d(TAG, "init collar list time");
+                // TODO: find out why this is called twice
+                if (response.equals("")) {
+                    return;
+                }
                 List<Collar> collars = ResponseConverterUtil.convertResponseToCollarList(response);
                 collarList.clear();
                 collarList.addAll(collars);
-                Log.d(TAG, "init collar list " + Thread.currentThread().getId());
-                Log.d(TAG, "size: " + collarList.size() + ", first: " + collarList.get(0));
+                //Log.d(TAG, "init collar list " + Thread.currentThread().getId());
+                Log.d(TAG, "size: " + collarList.size() + ", second: " + collarList.get(1).getName
+                        ());
                 collarId = collarList.get(0).getId();
 
-                /*getActivity().runOnUiThread(new Runnable() {
+                getActivity().runOnUiThread(new Runnable() {
                     @Override
-                    public void run() {*/
+                    public void run() {
                         adapter.notifyDataSetChanged();
-                /*    }
-                });*/
+                        displayMap();
+                    }
+                });
             }
         });
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            Log.d(TAG, "why");
             rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
         } else {
-            Log.d(TAG, "pls");
             rsat.execute(message);
         }
     }
@@ -286,7 +290,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
         final LatLng latLng = ResponseConverterUtil.convertRecordsString(records.get(0));
         dogLastLoc = latLng;
-        Log.d(TAG, "latlng: " + latLng);
+        //Log.d(TAG, "latlng: " + latLng);
 
         getActivity().runOnUiThread(new Runnable() {
             @Override
@@ -308,7 +312,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-                Log.d(TAG, "clicked area: " + latLng);
+                //Log.d(TAG, "clicked area: " + latLng);
                 DialogFragment safeZoneDialog = SafeZoneDialogFragment.newInstance(latLng
                         .latitude, latLng.longitude);
                 safeZoneDialog.show(getChildFragmentManager(), "dialog");
@@ -347,17 +351,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     }
 
     @Override
-    void locationPermissionGranted() {
-        Log.d(TAG, "locationpermissiongranted " + Thread.currentThread().getId());
-
-        sendMessage("GET_RECORDS " + collarId + " ");
-        //sendMessage("GET_SAFEZONES " + collarId + " \r\n");
-    }
-
-    @Override
     public void onSendCollarId(int id) {
         collarId = id;
-        Log.d(TAG, "on send collar id " + Thread.currentThread().getId());
+        //Log.d(TAG, "on send collar id " + Thread.currentThread().getId());
         sendMessage("GET_RECORDS " + collarId + " ");
         sendMessage("GET_SAFEZONES " + collarId + " \r\n");
     }
@@ -404,11 +400,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             final String[] safezone = sz.split("\\s+");
             final LatLng coords = ResponseConverterUtil.convertCoordsString(safezone[0]);
 
-            // TODO: won't need null check once q problem is fixed
-            if (coords == null) {
-                return;
-            }
-
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -433,10 +424,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
      * @param radius radius in meters of safe zone
      */
     public void sendSafezoneToServer(int radius, double lat, double longi) {
-        Log.d(TAG, "safezone latlng: " + lat + "," + longi);
+        //Log.d(TAG, "safezone latlng: " + lat + "," + longi);
 
-        // TODO: implement collar id stuff
-        String message = "NEW_SAFEZONE " + "0" + " (" + lat + "," + longi + ")" +
+        String message = "NEW_SAFEZONE " + collarId + " (" + lat + "," + longi + ")" +
                 " " + radius + "\r\n";
 
         map.addCircle(new CircleOptions()
@@ -455,7 +445,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
      * @param message command to be sent to server
      */
     private void sendMessage(String message) {
-        Log.d(TAG, "message: " + message);
+        //Log.d(TAG, "message: " + message);
 
         RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener
                 (getContext(), this));
@@ -547,7 +537,18 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            locationPermissionGranted();
+            Log.d(TAG, "location permission granted");
+            SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
+                    .prefs_name), 0);
+            if (!prefs.getBoolean("initCollarList", false)) {
+                Log.d(TAG, "init collar");
+                initCollarList();
+                prefs.edit().putBoolean("initCollarList", true).apply();
+            }
+            else {
+                Log.d(TAG, "collar already init");
+                displayMap();
+            }
         } else {
             String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
             String[] reasons = {"Location is necessary to view pet's current location on Google " +
@@ -611,7 +612,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 break;
 
             case R.id.refresh_map:
-                refreshMap();
+                displayMap();
                 break;
 
             case R.id.post_to_fb:
@@ -626,9 +627,14 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         return super.onOptionsItemSelected(item);
     }
 
-    private void refreshMap() {
+    @Override
+    public void displayMap() {
         safezones.clear();
-        map.clear();
+
+        // if map already initialized, you can clear it
+        if (map != null) {
+            map.clear();
+        }
         sendMessage("GET_RECORDS " + collarId + " 1 ");
         sendMessage("GET_SAFEZONES " + collarId + " \r\n");
     }
@@ -718,6 +724,10 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         super.onDestroy();
         mapView.onDestroy();
         lbm.unregisterReceiver(receiver);
+
+        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
+                .prefs_name), 0);
+        prefs.edit().putBoolean("initCollarList", false).apply();
     }
 
     @Override

@@ -13,7 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 
-import seniordesign.lostdogcollar.OnSendResponseListener;
+import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
 import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
 

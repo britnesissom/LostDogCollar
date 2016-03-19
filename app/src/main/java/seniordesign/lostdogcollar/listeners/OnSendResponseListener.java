@@ -1,4 +1,4 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.listeners;
 
 /**
  * Created by britne on 1/26/16.

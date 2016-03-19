@@ -1,9 +1,10 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.listeners;
 
 
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 
 import java.util.List;
 
@@ -41,13 +42,14 @@ public class MyResponseListener implements OnSendResponseListener {
             List<String> responses = ResponseConverterUtil.convertResponseToList(response);
 
             if (responses.get(0).contains("RECORDS")) {
-
+                Log.d("MyResponse", "records time");
                 // TODO: change this because collar id's are necessary now
                 responses.remove(0);    // the RECORDS n is unnecessary
                 listener.displayDogsLocation(responses.get(0));
                 //displayLocation(responses.get(0));  // display dog's last known location
             }
             else if (responses.get(0).contains("SAFEZONES")) {
+                Log.d("MyResponse", "safezones time");
                 responses.remove(0);
                 listener.displaySafezones(responses);
                 //safezones.addAll(responses);

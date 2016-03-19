@@ -3,7 +3,7 @@ package seniordesign.lostdogcollar.async;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import seniordesign.lostdogcollar.OnSendResponseListener;
+import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 import seniordesign.lostdogcollar.TCPClient;
 
 public class SendMessageAsyncTask extends AsyncTask<String,Void,Void> {

@@ -25,16 +25,15 @@
         android:id="@+id/view_collars_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#fff"
-        android:elevation="4dp">
+        android:background="#fff">
 
         <TextView
             android:id="@+id/collars_tv"
             android:layout_width="wrap_content"
             android:layout_height="48dp"
             android:gravity="center_vertical"
-            android:text="Collars"
-            android:textSize="22sp"
+            android:text="All Collars"
+            android:textSize="20sp"
             android:textColor="#000"
             android:paddingLeft="16dp"/>
 
@@ -51,7 +50,8 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/collar_rv"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:background="#fff"/>
 
     </LinearLayout>
 

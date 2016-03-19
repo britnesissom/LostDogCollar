@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d("Main", "on resume");
+        //Log.d("Main", "on resume");
 
         // Logs 'install' and 'app activate' App Events.
         AppEventsLogger.activateApp(this);
@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d("Main", "on pause");
+        //Log.d("Main", "on pause");
 
         // Logs 'app deactivate' App Event.
         AppEventsLogger.deactivateApp(this);
@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d("Main", "on destroy");
+        //Log.d("Main", "on destroy");
 
         Intent intent = new Intent(this, ServerService.class);
         stopService(intent);

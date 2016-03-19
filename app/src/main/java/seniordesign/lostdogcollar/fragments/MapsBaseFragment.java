@@ -157,7 +157,7 @@ public abstract class MapsBaseFragment extends Fragment {
 
                     // permission was granted, yay!
                     // this isn't necessary for floating action button click so fix that
-                    locationPermissionGranted();
+                    displayMap();
 
                 } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
                     // Should we show an explanation?
@@ -174,5 +174,5 @@ public abstract class MapsBaseFragment extends Fragment {
         }
     }
 
-    abstract void locationPermissionGranted();
+    abstract void displayMap();
 }

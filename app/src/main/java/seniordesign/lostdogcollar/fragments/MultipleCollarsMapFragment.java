@@ -41,9 +41,9 @@ import java.util.List;
 
 import seniordesign.lostdogcollar.Collar;
 import seniordesign.lostdogcollar.CollarListRVAdapter;
-import seniordesign.lostdogcollar.MyResponseListener;
-import seniordesign.lostdogcollar.OnDisplayMapListener;
-import seniordesign.lostdogcollar.OnSendResponseListener;
+import seniordesign.lostdogcollar.listeners.MyResponseListener;
+import seniordesign.lostdogcollar.listeners.OnDisplayMapListener;
+import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
 import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
 import seniordesign.lostdogcollar.utils.ResponseConverterUtil;
@@ -162,7 +162,7 @@ public class MultipleCollarsMapFragment extends MapsBaseFragment implements Goog
             getPermission(permissions, reasons, codes);
         }
         else {
-            locationPermissionGranted();
+            displayMap();
         }
     }
 
@@ -197,7 +197,7 @@ public class MultipleCollarsMapFragment extends MapsBaseFragment implements Goog
     }
 
     @Override
-    void locationPermissionGranted() {
+    void displayMap() {
         sendMessage("GET_RECORDS " + collarId + " ");
         sendMessage("GET_SAFEZONES " + collarId + " \r\n");
     }
@@ -205,7 +205,7 @@ public class MultipleCollarsMapFragment extends MapsBaseFragment implements Goog
     @Override
     public void onSendCollarId(int id) {
         collarId = id;
-        locationPermissionGranted();
+        displayMap();
     }
 
     @Override
@@ -214,7 +214,7 @@ public class MultipleCollarsMapFragment extends MapsBaseFragment implements Goog
 
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            locationPermissionGranted();
+            displayMap();
         } else {
             String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
             String[] reasons = {"Location is necessary to view pet's current location on Google " +

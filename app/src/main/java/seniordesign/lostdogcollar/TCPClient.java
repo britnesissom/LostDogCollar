@@ -69,7 +69,7 @@ public class TCPClient {
     public void sendMessage(String message) {
 
         if (mBufferOut != null && !mBufferOut.checkError()) {
-            Log.i(TAG, "message should be sending now: " + message);
+            Log.i(TAG, "message: " + message);
             mBufferOut.print(message);
             mBufferOut.flush();
         }
