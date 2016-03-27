@@ -8,7 +8,7 @@ import android.util.Log;
 
 import java.util.List;
 
-import seniordesign.lostdogcollar.utils.ResponseConverterUtil;
+import seniordesign.lostdogcollar.ResponseConverterUtil;
 
 /**
  * custom server response class that parses response from server and performs appropriate task
@@ -46,14 +46,11 @@ public class MyResponseListener implements OnSendResponseListener {
                 // TODO: change this because collar id's are necessary now
                 responses.remove(0);    // the RECORDS n is unnecessary
                 listener.displayDogsLocation(responses.get(0));
-                //displayLocation(responses.get(0));  // display dog's last known location
             }
             else if (responses.get(0).contains("SAFEZONES")) {
                 Log.d("MyResponse", "safezones time");
                 responses.remove(0);
                 listener.displaySafezones(responses);
-                //safezones.addAll(responses);
-                //addCircles();
             }
         }
     }

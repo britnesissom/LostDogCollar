@@ -3,6 +3,7 @@ package seniordesign.lostdogcollar.fragments.dialogs;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
@@ -15,14 +16,33 @@ import android.widget.EditText;
 
 import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
-import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
+import seniordesign.lostdogcollar.RetrieveFromServerAsyncTask;
 
 public class AddCollarDialogFragment extends DialogFragment {
 
     private static final String TAG = "AddCollarDialog";
 
+    private OnRefreshCollarsListener listener;
+
+    public interface OnRefreshCollarsListener {
+        void refreshCollarList();
+    }
+
     public static AddCollarDialogFragment newInstance() {
         return new AddCollarDialogFragment();
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        try {
+            listener = (OnRefreshCollarsListener) getParentFragment();
+            //Log.d(TAG, "listener: " + listener);
+        } catch (ClassCastException e) {
+            throw new ClassCastException("Calling Fragment must implement " +
+                    "OnRefreshCollarsListener");
+        }
     }
 
     @Override
@@ -41,6 +61,7 @@ public class AddCollarDialogFragment extends DialogFragment {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 sendCollarToServer(editTextId.getText().toString(), editTextName.getText().toString());
+                listener.refreshCollarList();
             }
         });
 

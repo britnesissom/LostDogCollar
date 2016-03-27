@@ -1,4 +1,4 @@
-package seniordesign.lostdogcollar.utils;
+package seniordesign.lostdogcollar;
 
 import android.util.Log;
 

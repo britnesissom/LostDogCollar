@@ -25,7 +25,6 @@ import seniordesign.lostdogcollar.R;
  */
 public abstract class MapsBaseFragment extends Fragment {
 
-    public static final int SAFE_ZONE_CODE = 100;
     public static final int DOG_LOCATION_CODE = 101;
 
     private boolean mResolvingError;

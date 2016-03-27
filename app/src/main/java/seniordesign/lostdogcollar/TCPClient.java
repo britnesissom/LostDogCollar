@@ -13,12 +13,6 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 
-/**
- * Description
- *
- * @author Catalin Prata
- *         Date: 2/12/13
- */
 public class TCPClient {
 
     private static final String TAG = "TCPClient";
@@ -85,7 +79,6 @@ public class TCPClient {
     public void stopClient() {
 
         // send message that we are closing the connection
-        //sendMessage(Constants.CLOSED_CONNECTION + "Kazy");
         mRun = false;
 
         if (mBufferOut != null) {

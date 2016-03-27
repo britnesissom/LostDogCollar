@@ -16,7 +16,7 @@ import android.widget.Toast;
 
 import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
-import seniordesign.lostdogcollar.async.RetrieveFromServerAsyncTask;
+import seniordesign.lostdogcollar.RetrieveFromServerAsyncTask;
 import seniordesign.lostdogcollar.services.RegistrationIntentService;
 
 /**
