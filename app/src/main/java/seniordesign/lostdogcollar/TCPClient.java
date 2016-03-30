@@ -17,8 +17,8 @@ public class TCPClient {
 
     private static final String TAG = "TCPClient";
 
-    //private static final String SERVER_IP = "127.0.0.1"; //your computer IP address
-    private static final String SERVER_IP = "104.237.130.222"; //your computer IP address
+    private static final String SERVER_IP = "10.145.68.185"; //your computer IP address
+    //private static final String SERVER_IP = "104.237.130.222"; //your computer IP address
     private static final int SERVER_PORT = 12000;
     // message to send to the server
     private String mServerMessage;
