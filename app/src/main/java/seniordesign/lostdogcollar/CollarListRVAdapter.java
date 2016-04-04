@@ -28,10 +28,6 @@ public class CollarListRVAdapter extends RecyclerView.Adapter<CollarListRVAdapte
         this.collarList = collarList;
         this.context = context;
         this.listener = listener;
-
-        for (int i = 0; i < collarList.size(); i++) {
-            Log.i("CollarAdapter", collarList.get(i).getName());
-        }
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -56,7 +52,7 @@ public class CollarListRVAdapter extends RecyclerView.Adapter<CollarListRVAdapte
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
-        Log.i("collar adapter", collarList.get(position).getName());
+        //Log.i("collar adapter", collarList.get(position).getName());
         holder.name.setText(collarList.get(position).getName());
         holder.view.setOnClickListener(new View.OnClickListener() {
             @Override

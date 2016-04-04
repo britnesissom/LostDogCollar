@@ -20,20 +20,24 @@ public class RemoveSafeZoneDialogFragment extends DialogFragment {
 
     private static final String CENTER = "center";
     private static final String INDEX = "index";
+    private static final String RADIUS = "radius";
 
     private OnRemoveSafeZoneListener listener;
     private LatLng center;
+    private double radius;
     private int index;
 
     public interface OnRemoveSafeZoneListener {
-        void removeSafezoneFromServer(LatLng center, int index);
+        void removeSafezoneFromServer(LatLng center, double radius, int index);
     }
 
-    public static RemoveSafeZoneDialogFragment newInstance(LatLng center, int index) {
+    public static RemoveSafeZoneDialogFragment newInstance(LatLng center, double radius, int
+            index) {
         RemoveSafeZoneDialogFragment fragment = new RemoveSafeZoneDialogFragment();
         Bundle args = new Bundle();
         args.putParcelable(CENTER, center);
         args.putInt(INDEX, index);
+        args.putDouble(RADIUS, radius);
         fragment.setArguments(args);
         return fragment;
     }
@@ -48,6 +52,7 @@ public class RemoveSafeZoneDialogFragment extends DialogFragment {
             if (getArguments() != null) {
                 center = getArguments().getParcelable(CENTER);
                 index = getArguments().getInt(INDEX);
+                radius = getArguments().getDouble(RADIUS);
             }
             //Log.d(TAG, "listener: " + listener);
         } catch (ClassCastException e) {
@@ -66,7 +71,7 @@ public class RemoveSafeZoneDialogFragment extends DialogFragment {
         builder.setPositiveButton("REMOVE", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                listener.removeSafezoneFromServer(center, index);
+                listener.removeSafezoneFromServer(center, radius, index);
             }
         });
 

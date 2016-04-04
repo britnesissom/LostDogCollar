@@ -17,8 +17,8 @@ public class TCPClient {
 
     private static final String TAG = "TCPClient";
 
-    private static final String SERVER_IP = "10.145.68.185"; //your computer IP address
-    //private static final String SERVER_IP = "104.237.130.222"; //your computer IP address
+    //private static final String SERVER_IP = "10.145.68.185"; //your computer IP address
+    private static final String SERVER_IP = "104.237.130.222"; //your computer IP address
     private static final int SERVER_PORT = 12000;
     // message to send to the server
     private String mServerMessage;
@@ -150,13 +150,14 @@ public class TCPClient {
             }
 
         } catch (ConnectException e) {
+            Log.d(TAG, e.getMessage());
             /*Looper.prepare();
             final Handler handler = new Handler();*/
 
             Log.d(TAG, "trying to reconnect");
-            /*if (retry < 3) {
+            if (retry < 10) {
                 retry++;
-                Log.i(TAG, "" + retry);*/
+                Log.i(TAG, "" + retry);
 
                 // try to reconnect after 3 seconds
                 try {
@@ -166,9 +167,9 @@ public class TCPClient {
                 }
 
                 run();
-            /*} else {
+            } else {
                 mRun =  false;
-            }*/
+            }
 
         } catch (IOException e) {
             Log.e(TAG, "S: Error", e);

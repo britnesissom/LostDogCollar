@@ -79,8 +79,7 @@ import seniordesign.lostdogcollar.fragments.dialogs.AddCollarDialogFragment;
 import seniordesign.lostdogcollar.ResponseConverterUtil;
 
 
-// TODO: implement notification stopper, response converter for other types
-// TODO: (maybe) implement removal of safezones
+// TODO: implement notification stopper
 // TODO: callback for when login/register message actually received instead of doing thread.sleep
 public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, SafeZoneDialogFragment.OnSendRadiusListener,
@@ -131,6 +130,8 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             username = getArguments().getString(USERNAME);
         }
 
+        initCircleMap();
+
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(getContext())
                     .addConnectionCallbacks(this)
@@ -140,8 +141,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         }
         setmResolvingError(false);
         safezones = new ArrayList<>();
-
-        initCircleMap();
 
         collarList = new ArrayList<>();
         mHandler = new Handler();
@@ -199,7 +198,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         stopNotifsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: implement notification stopper method in server
                 //sendMessage("STOP NOTIFICATIONS");
                 SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
                         .prefs_name), 0);
@@ -209,7 +207,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             }
         });
 
-        // TODO: possibly change to button on toolbar
         SwitchCompat ledSwitch = (SwitchCompat) view.findViewById(R.id.led_switch);
         ledSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -228,6 +225,65 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
         return view;
     }
+
+    /**
+     * listener for map click to begin "add safezone" task
+     */
+    private void setOnMapClickListener() {
+        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                //Log.d(TAG, "clicked area: " + latLng);
+                DialogFragment safeZoneDialog = SafeZoneDialogFragment.newInstance(latLng
+                        .latitude, latLng.longitude);
+                safeZoneDialog.show(getChildFragmentManager(), "dialog");
+            }
+        });
+    }
+
+    private void setupBottomSheet(View view) {
+        // The View with the BottomSheetBehavior
+        View bottomSheet = view.findViewById(R.id.bottom_sheet);
+        behavior = BottomSheetBehavior.from(bottomSheet);
+
+        RelativeLayout relLay = (RelativeLayout) view.findViewById(R.id.view_collars_layout);
+        relLay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBehaviorChange();
+            }
+        });
+
+        image.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBehaviorChange();
+            }
+        });
+    }
+
+    private void onBehaviorChange() {
+        Log.d(TAG, "" + behavior.getState());
+        if (behavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+            behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            image.setImageResource(R.drawable.ic_arrow_drop_down);
+        } else if (behavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+            behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            image.setImageResource(R.drawable.ic_arrow_drop_up);
+        }
+    }
+
+    private void setupRecyclerView(View view) {
+        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.collar_rv);
+        recyclerView.setHasFixedSize(true);
+
+        // use a linear layout manager
+        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
+        recyclerView.setLayoutManager(mLayoutManager);
+
+        recyclerView.setAdapter(adapter);
+    }
+
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
@@ -321,64 +377,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                         .title("Last Known Location"));
             }
         });
-    }
-
-    /**
-     * listener for map click to begin "add safezone" task
-     */
-    private void setOnMapClickListener() {
-        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-            @Override
-            public void onMapClick(LatLng latLng) {
-                //Log.d(TAG, "clicked area: " + latLng);
-                DialogFragment safeZoneDialog = SafeZoneDialogFragment.newInstance(latLng
-                        .latitude, latLng.longitude);
-                safeZoneDialog.show(getChildFragmentManager(), "dialog");
-            }
-        });
-    }
-
-    private void setupBottomSheet(View view) {
-        // The View with the BottomSheetBehavior
-        View bottomSheet = view.findViewById(R.id.bottom_sheet);
-        behavior = BottomSheetBehavior.from(bottomSheet);
-
-        RelativeLayout relLay = (RelativeLayout) view.findViewById(R.id.view_collars_layout);
-        relLay.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onBehaviorChange();
-            }
-        });
-
-        image.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onBehaviorChange();
-            }
-        });
-    }
-
-    private void onBehaviorChange() {
-        Log.d(TAG, "" + behavior.getState());
-        if (behavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
-            behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-            image.setImageResource(R.drawable.ic_arrow_drop_down);
-        } else if (behavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
-            behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-            image.setImageResource(R.drawable.ic_arrow_drop_up);
-        }
-    }
-
-    private void setupRecyclerView(View view) {
-        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.collar_rv);
-        recyclerView.setHasFixedSize(true);
-
-        // use a linear layout manager
-        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
-        recyclerView.setLayoutManager(mLayoutManager);
-
-        recyclerView.setAdapter(adapter);
     }
 
     /**
@@ -685,6 +683,13 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 break;
             }
 
+            case R.id.remove_safezone:
+                FragmentTransaction transaction = getFragmentManager().beginTransaction();
+                transaction.addToBackStack(null);
+                transaction.replace(R.id.content_frag, RemoveSafezonesFragment.newInstance
+                        (username)).commit();
+                break;
+
             case R.id.app_add_collar:
                 DialogFragment addCollarDialog = AddCollarDialogFragment.newInstance();
                 addCollarDialog.show(getChildFragmentManager(), "dialog");
@@ -698,10 +703,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 postToFacebook();
                 break;
 
-            case R.id.app_logout: {
+            case R.id.app_logout:
                 logout();
                 break;
-            }
         }
         return super.onOptionsItemSelected(item);
     }
@@ -712,7 +716,10 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     @Override
     public void displayMap() {
         safezones.clear();
-        circleMap.get(collarId).clear();
+
+        if (circleMap.get(collarId) != null) {
+            circleMap.get(collarId).clear();
+        }
 
         // if map already initialized, you can clear it
         if (map != null) {
@@ -738,7 +745,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
             @Override
             public void onSendResponse(String response) {
-                if (response.equals("OK")) {
+                if (response.equals("LOGGED OUT")) {
                     FragmentTransaction transaction = getFragmentManager().beginTransaction();
                     transaction.replace(R.id.content_frag, LoginFragment.newInstance())
                             .commit();

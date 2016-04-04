@@ -10,7 +10,6 @@
     <include layout="@layout/multiple_maps_layout"
              android:id="@+id/multiple_maps"
              android:layout_width="match_parent"
-             android:layout_height="match_parent"
-             android:layout_marginTop="10dp"/>
+             android:layout_height="match_parent"/>
 
 </LinearLayout>

@@ -18,6 +18,12 @@
         app:showAsAction="always"/>
 
     <item
+        android:id="@+id/remove_safezone"
+        android:orderInCategory="100"
+        android:title="@string/remove_safezone"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/app_add_collar"
         android:orderInCategory="100"
         android:title="@string/add_collar"

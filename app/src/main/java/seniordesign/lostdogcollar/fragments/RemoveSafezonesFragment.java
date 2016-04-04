@@ -59,9 +59,6 @@ import seniordesign.lostdogcollar.RetrieveFromServerAsyncTask;
 import seniordesign.lostdogcollar.ResponseConverterUtil;
 
 
-// TODO: implement notification stopper, response converter for other types
-// TODO: (maybe) implement removal of safezones
-// TODO: callback for when login/register message actually received instead of doing thread.sleep
 public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, RemoveSafeZoneDialogFragment
                 .OnRemoveSafeZoneListener,
@@ -70,7 +67,7 @@ public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleA
     private static final String USERNAME = "username";
 
     private static final int RESOLVE_ERROR_CODE = 1001;
-    private static final String TAG = "HomeFragment";
+    private static final String TAG = "RemoveSzFragment";
 
     private String username;
 
@@ -146,7 +143,7 @@ public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleA
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_home, container, false);
+        View view = inflater.inflate(R.layout.fragment_remove_safezones, container, false);
         setupToolbar((Toolbar) view.findViewById(R.id.toolbar), getString(R.string.app_name));
         setHasOptionsMenu(true);
 
@@ -177,12 +174,91 @@ public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleA
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        Snackbar.make(getActivity().findViewById(R.id.coord_layout), "Tap area on map to add " +
-                "safe zone", Snackbar.LENGTH_INDEFINITE)
+        Snackbar.make(getActivity().findViewById(R.id.coord_layout), "Tap safe zone to remove",
+                Snackbar.LENGTH_INDEFINITE)
                 .setAction("OK", new View.OnClickListener() {
                     @Override
                     public void onClick(View view) { }
                 }).show();
+    }
+
+    /**
+     * listener for map click to begin "add safezone" task
+     */
+    private void setOnMapClickListener() {
+        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                circleList = circleMap.get(collarId);
+
+                for (int i = 0; i < circleList.size(); i++) {
+                    LatLng center = circleList.get(i).getCenter();
+                    double radius = circleList.get(i).getRadius();
+                    float[] distance = new float[1];
+                    Location.distanceBetween(latLng.latitude, latLng.longitude, center.latitude,
+                            center.longitude, distance);
+
+                    if (distance[0] < radius) {
+                        // open dialog asking to remove circle
+                        DialogFragment removeSafeZoneDialog = RemoveSafeZoneDialogFragment
+                                .newInstance(center, radius, i);
+                        removeSafeZoneDialog.show(getChildFragmentManager(), "dialog");
+
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void removeSafezoneFromServer(LatLng center, double radius, int index) {
+        sendMessage("REMOVE_SAFEZONE " + collarId + " (" + center.latitude + ","
+                + center.longitude + ") " + (int) radius + "\r\n");
+        circleList.get(index).remove();
+    }
+
+    private void setupBottomSheet(View view) {
+        // The View with the BottomSheetBehavior
+        View bottomSheet = view.findViewById(R.id.bottom_sheet);
+        behavior = BottomSheetBehavior.from(bottomSheet);
+
+        RelativeLayout relLay = (RelativeLayout) view.findViewById(R.id.view_collars_layout);
+        relLay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBehaviorChange();
+            }
+        });
+
+        image.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBehaviorChange();
+            }
+        });
+    }
+
+    private void onBehaviorChange() {
+        Log.d(TAG, "" + behavior.getState());
+        if (behavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+            behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            image.setImageResource(R.drawable.ic_arrow_drop_down);
+        } else if (behavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+            behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            image.setImageResource(R.drawable.ic_arrow_drop_up);
+        }
+    }
+
+    private void setupRecyclerView(View view) {
+        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.collar_rv);
+        recyclerView.setHasFixedSize(true);
+
+        // use a linear layout manager
+        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
+        recyclerView.setLayoutManager(mLayoutManager);
+
+        recyclerView.setAdapter(adapter);
     }
 
     /**
@@ -258,85 +334,6 @@ public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleA
                         .title("Last Known Location"));
             }
         });
-    }
-
-    /**
-     * listener for map click to begin "add safezone" task
-     */
-    private void setOnMapClickListener() {
-        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-            @Override
-            public void onMapClick(LatLng latLng) {
-                circleList = circleMap.get(collarId);
-
-                for (int i = 0; i < circleList.size(); i++) {
-                    LatLng center = circleList.get(i).getCenter();
-                    double radius = circleList.get(i).getRadius();
-                    float[] distance = new float[1];
-                    Location.distanceBetween(latLng.latitude, latLng.longitude, center.latitude,
-                            center.longitude, distance);
-
-                    if (distance[0] < radius) {
-                        // open dialog asking to remove circle
-                        DialogFragment removeSafeZoneDialog = RemoveSafeZoneDialogFragment
-                                .newInstance(center, i);
-                        removeSafeZoneDialog.show(getChildFragmentManager(), "dialog");
-
-                        break;
-                    }
-                }
-            }
-        });
-    }
-
-    @Override
-    public void removeSafezoneFromServer(LatLng center, int index) {
-        sendMessage("REMOVE_SAFEZONE " + collarId + " (" + center.latitude + ","
-                + center.longitude + " \r\n");
-        circleList.get(index).remove();
-    }
-
-    private void setupBottomSheet(View view) {
-        // The View with the BottomSheetBehavior
-        View bottomSheet = view.findViewById(R.id.bottom_sheet);
-        behavior = BottomSheetBehavior.from(bottomSheet);
-
-        RelativeLayout relLay = (RelativeLayout) view.findViewById(R.id.view_collars_layout);
-        relLay.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onBehaviorChange();
-            }
-        });
-
-        image.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onBehaviorChange();
-            }
-        });
-    }
-
-    private void onBehaviorChange() {
-        Log.d(TAG, "" + behavior.getState());
-        if (behavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
-            behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-            image.setImageResource(R.drawable.ic_arrow_drop_down);
-        } else if (behavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
-            behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-            image.setImageResource(R.drawable.ic_arrow_drop_up);
-        }
-    }
-
-    private void setupRecyclerView(View view) {
-        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.collar_rv);
-        recyclerView.setHasFixedSize(true);
-
-        // use a linear layout manager
-        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
-        recyclerView.setLayoutManager(mLayoutManager);
-
-        recyclerView.setAdapter(adapter);
     }
 
     /**
@@ -446,7 +443,7 @@ public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleA
      * @param message command to be sent to server
      */
     private void sendMessage(String message) {
-        //Log.d(TAG, "message: " + message);
+        Log.d(TAG, "message: " + message);
 
         RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener
                 (getContext(), this));
@@ -464,7 +461,7 @@ public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleA
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "location permission granted");
-            displayMap();
+            //displayMap();
         } else {
             String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
             String[] reasons = {"Location is necessary to view pet's current location on Google " +
@@ -507,7 +504,7 @@ public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleA
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.main_menu, menu);
+        inflater.inflate(R.menu.remove_sz_menu, menu);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
