@@ -36,8 +36,6 @@ public class MyGcmListenerService extends GcmListenerService {
     @Override
     public void onMessageReceived(String from, Bundle data) {
         String message = data.getString("message");
-        Log.d(TAG, "From: " + from);
-        Log.d(TAG, "Message: " + message);
 
         if (message != null && message.contains("is lost")) {
             // broadcastreceiver to send message to homefragment to update location
@@ -77,7 +75,7 @@ public class MyGcmListenerService extends GcmListenerService {
                 .setContentText(message)
                 .setAutoCancel(true)
                 .setSound(defaultSoundUri)
-                .setVibrate(new long[]{500, 1000, 500, 1000, 500, 1000})
+                .setVibrate(new long[]{300, 500, 300, 500})
                 .setLights(Color.parseColor("#8C00FF"), 300, 1500)
                 .setContentIntent(pendingIntent);
 

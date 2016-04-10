@@ -1,6 +1,7 @@
 package seniordesign.lostdogcollar;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 import seniordesign.lostdogcollar.TCPClient;
@@ -18,7 +19,7 @@ public class RetrieveFromServerAsyncTask extends AsyncTask<String,String,Void> {
 
     @Override
     protected Void doInBackground(final String... message) {
-
+        Log.d("RFSAT", "message: " + message[0]);
         TCPClient tcpClient = TCPClient.getInstance();
         tcpClient.setListener(new TCPClient.OnResponseReceivedListener() {
             @Override

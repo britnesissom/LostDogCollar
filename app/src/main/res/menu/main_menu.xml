@@ -30,6 +30,12 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/app_delete_collar"
+        android:orderInCategory="100"
+        android:title="@string/delete_collar"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/app_settings"
         android:orderInCategory="100"
         android:title="@string/settings"

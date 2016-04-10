@@ -1,4 +1,4 @@
-package seniordesign.lostdogcollar;
+package seniordesign.lostdogcollar.views;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -10,23 +10,25 @@ import android.widget.TextView;
 
 import java.util.List;
 
+import seniordesign.lostdogcollar.Collar;
+import seniordesign.lostdogcollar.R;
+
 /**
  * Created by britne on 3/13/16.
  */
 public class CollarListRVAdapter extends RecyclerView.Adapter<CollarListRVAdapter.ViewHolder> {
 
+    private static final String TAG = "CollarRVAdapter";
+
     private List<Collar> collarList;
-    private Context context;
     private OnSendCollarIdListener listener;
 
     public interface OnSendCollarIdListener {
-        void onSendCollarId(int id);
+        void onSendCollarId(int id, String name);
     }
 
-    public CollarListRVAdapter(List<Collar> collarList, Context context,
-                                       OnSendCollarIdListener listener) {
+    public CollarListRVAdapter(List<Collar> collarList, OnSendCollarIdListener listener) {
         this.collarList = collarList;
-        this.context = context;
         this.listener = listener;
     }
 
@@ -51,14 +53,17 @@ public class CollarListRVAdapter extends RecyclerView.Adapter<CollarListRVAdapte
     }
 
     @Override
-    public void onBindViewHolder(final ViewHolder holder, int position) {
+    public void onBindViewHolder(ViewHolder holder, final int position) {
         //Log.i("collar adapter", collarList.get(position).getName());
+        final int clickPos = holder.getAdapterPosition();
         holder.name.setText(collarList.get(position).getName());
         holder.view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // send collar id to display map
-                listener.onSendCollarId(collarList.get(holder.getAdapterPosition()).getId());
+                //Log.d(TAG, "pos: " + clickPos);
+                listener.onSendCollarId(collarList.get(clickPos).getId(),
+                        collarList.get(clickPos).getName());
             }
         });
     }

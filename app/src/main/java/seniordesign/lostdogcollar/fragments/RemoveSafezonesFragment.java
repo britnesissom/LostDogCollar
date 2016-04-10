@@ -48,9 +48,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import seniordesign.lostdogcollar.Collar;
-import seniordesign.lostdogcollar.CollarListRVAdapter;
+import seniordesign.lostdogcollar.views.CollarListRVAdapter;
 import seniordesign.lostdogcollar.fragments.dialogs.RemoveSafeZoneDialogFragment;
-import seniordesign.lostdogcollar.fragments.dialogs.SafeZoneDialogFragment;
 import seniordesign.lostdogcollar.listeners.MyResponseListener;
 import seniordesign.lostdogcollar.listeners.OnDisplayMapListener;
 import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
@@ -129,7 +128,7 @@ public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleA
 
         collarId = -1;
 
-        adapter = new CollarListRVAdapter(collarList, getContext(), this);
+        adapter = new CollarListRVAdapter(collarList, this);
         initCollarList();
     }
 
@@ -341,7 +340,7 @@ public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleA
      * @param id collar ID
      */
     @Override
-    public void onSendCollarId(int id) {
+    public void onSendCollarId(int id, String name) {
         collarId = id;
 
         //hide the list again
@@ -514,7 +513,7 @@ public class RemoveSafezonesFragment extends MapsBaseFragment implements GoogleA
             case R.id.app_settings: {
                 FragmentTransaction transaction = getFragmentManager().beginTransaction();
                 transaction.addToBackStack(null);
-                transaction.replace(R.id.content_frag, SettingsPageFragment.newInstance())
+                transaction.replace(R.id.content_frag, SettingsPageFragment.newInstance(collarId))
                         .commit();
                 break;
             }

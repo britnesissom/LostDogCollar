@@ -28,4 +28,16 @@ public class Collar {
     public void setName(String name) {
         this.name = name;
     }
+
+    public boolean equals(Object o) {
+        if (!(o instanceof Collar)) {
+            return false;
+        }
+        Collar other = (Collar) o;
+        return name.equals(other.name) && id == other.id;
+    }
+
+    public int hashCode() {
+        return name.hashCode();
+    }
 }

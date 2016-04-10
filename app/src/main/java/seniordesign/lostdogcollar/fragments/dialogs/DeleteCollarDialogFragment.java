@@ -21,19 +21,33 @@ import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
 import seniordesign.lostdogcollar.RetrieveFromServerAsyncTask;
 
-public class AddCollarDialogFragment extends DialogFragment {
+public class DeleteCollarDialogFragment extends DialogFragment {
 
     private static final String TAG = "AddCollarDialog";
+    private static final String ID = "id";
+    private static final String NAME = "name";
 
     private OnRefreshCollarsListener listener;
+    private int id;
+    private String name;
 
-    public static AddCollarDialogFragment newInstance() {
-        return new AddCollarDialogFragment();
+    public static DeleteCollarDialogFragment newInstance(int id, String name) {
+        DeleteCollarDialogFragment fragment = new DeleteCollarDialogFragment();
+        Bundle args = new Bundle();
+        args.putInt(ID, id);
+        args.putString(NAME, name);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) {
+            id = getArguments().getInt(ID);
+            name = getArguments().getString(NAME);
+        }
 
         try {
             listener = (OnRefreshCollarsListener) getParentFragment();
@@ -47,19 +61,14 @@ public class AddCollarDialogFragment extends DialogFragment {
     @Override
     @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        LayoutInflater inflater = getActivity().getLayoutInflater();
-        View view = inflater.inflate(R.layout.fragment_add_collar_dialog, null);
-
-        final EditText editTextId = (EditText) view.findViewById(R.id.collar_id);
-        final EditText editTextName = (EditText) view.findViewById(R.id.collar_name);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setView(view);
-        builder.setTitle("Add New Collar");
-        builder.setPositiveButton("ADD", new DialogInterface.OnClickListener() {
+        builder.setTitle("Delete Collar");
+        builder.setMessage("Are you sure you want to delete " + name + "\'s collar?");
+        builder.setPositiveButton("DELETE", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                sendCollarToServer(editTextId.getText().toString(), editTextName.getText().toString());
+                deleteCollar();
             }
         });
 
@@ -74,14 +83,14 @@ public class AddCollarDialogFragment extends DialogFragment {
 
     }
 
-    private void sendCollarToServer(final String id, final String name) {
-        String message = "ADD_COLLAR " + id + " " + name + "\r\n";
+    private void deleteCollar() {
+        String message = "REMOVE_COLLAR " + id + " \r\n";
 
         RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
             @Override
             public void onSendResponse(String response) {
-                Log.d(TAG, "collar added");
-                Collar collar = new Collar(Integer.parseInt(id), name);
+                //Log.d(TAG, "collar removed");
+                Collar collar = new Collar(id, name);
                 listener.refreshCollarList(collar);
             }
         });

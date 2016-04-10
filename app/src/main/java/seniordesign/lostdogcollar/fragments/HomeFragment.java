@@ -38,6 +38,7 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -68,7 +69,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import seniordesign.lostdogcollar.Collar;
-import seniordesign.lostdogcollar.CollarListRVAdapter;
+import seniordesign.lostdogcollar.listeners.OnRefreshCollarsListener;
+import seniordesign.lostdogcollar.views.CollarListRVAdapter;
 import seniordesign.lostdogcollar.fragments.dialogs.SafeZoneDialogFragment;
 import seniordesign.lostdogcollar.listeners.MyResponseListener;
 import seniordesign.lostdogcollar.listeners.OnDisplayMapListener;
@@ -79,12 +81,12 @@ import seniordesign.lostdogcollar.fragments.dialogs.AddCollarDialogFragment;
 import seniordesign.lostdogcollar.ResponseConverterUtil;
 
 
-// TODO: implement notification stopper
 // TODO: callback for when login/register message actually received instead of doing thread.sleep
+// TODO: collar removal
 public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, SafeZoneDialogFragment.OnSendRadiusListener,
         OnDisplayMapListener, CollarListRVAdapter.OnSendCollarIdListener,
-        AddCollarDialogFragment.OnRefreshCollarsListener {
+        OnRefreshCollarsListener {
 
     private static final String USERNAME = "username";
 
@@ -108,6 +110,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     private List<Collar> collarList;
     private Location lastUserLocation;
     private int collarId;
+    private String name;
 
     public HomeFragment() {
         // Required empty public constructor
@@ -156,11 +159,27 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
         collarId = -1;
 
-        adapter = new CollarListRVAdapter(collarList, getContext(), this);
+        adapter = new CollarListRVAdapter(collarList, this);
         initCollarList();
 
         lbm = LocalBroadcastManager.getInstance(getContext());
         lbm.registerReceiver(receiver, new IntentFilter("update-notif-prefs"));
+
+        new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "sending broadcast");
+                SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
+                        .prefs_name), 0);
+                int notifTime = prefs.getInt("notifTime", 30000);
+
+                Intent intent = new Intent();
+                intent.putExtra("notifTime", notifTime);
+
+                lbm.sendBroadcast(intent);
+                mHandler.postDelayed(this, notifTime);
+            }
+        };
     }
 
     private void initCircleMap() {
@@ -198,7 +217,10 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         stopNotifsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //sendMessage("STOP NOTIFICATIONS");
+                sendMessage("STOP_NOTIFICATIONS " + collarId + " \r\n");
+
+                Toast.makeText(getContext(), "Notifications stopped", Toast.LENGTH_SHORT).show();
+
                 SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
                         .prefs_name), 0);
                 SharedPreferences.Editor editor = prefs.edit();
@@ -263,7 +285,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     }
 
     private void onBehaviorChange() {
-        Log.d(TAG, "" + behavior.getState());
         if (behavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
             behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
             image.setImageResource(R.drawable.ic_arrow_drop_down);
@@ -297,11 +318,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 }).show();
     }
 
-    @Override
-    public void refreshCollarList() {
-        initCollarList();
-    }
-
     /**
      * get the list of collars for a certain user
      */
@@ -310,7 +326,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
             @Override
             public void onSendResponse(String response) {
-                Log.d(TAG, response);
+                Log.d(TAG, "response: " + response);
                 // TODO: find out why this is called twice
                 if (response.equals("")) {
                     return;
@@ -319,6 +335,13 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
                 if (collars.size() == 0) {
                     // TODO: display dialog saying 'you have no saved collars!'
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getContext(), "No saved collars", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
                     return;
                 }
 
@@ -332,13 +355,13 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                     }
                 }
 
-                //Log.d(TAG, "init collar list " + Thread.currentThread().getId());
-                Log.d(TAG, "size: " + collarList.size());
-                collarId = collarList.get(0).getId();
+                collarId = collarList.get(collarList.size()-1).getId();
+                name = collarList.get(collarList.size()-1).getName();
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        Log.d(TAG, "adapter changed");
                         adapter.notifyDataSetChanged();
                         displayMap();
                     }
@@ -350,6 +373,17 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         } else {
             rsat.execute(message);
         }
+    }
+
+    @Override
+    public void refreshCollarList(Collar collar) {
+        collarList.add(collar);
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                adapter.notifyDataSetChanged();
+            }
+        });
     }
 
     /**
@@ -364,7 +398,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
         final LatLng latLng = ResponseConverterUtil.convertRecordsString(records.get(0));
         dogLastLoc = latLng;
-        //Log.d(TAG, "latlng: " + latLng);
 
         getActivity().runOnUiThread(new Runnable() {
             @Override
@@ -374,7 +407,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
                 map.addMarker(new MarkerOptions()
                         .position(latLng)
-                        .title("Last Known Location"));
+                        .title(name + "\'s Last Known Location"));
             }
         });
     }
@@ -384,8 +417,9 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
      * @param id collar ID
      */
     @Override
-    public void onSendCollarId(int id) {
+    public void onSendCollarId(int id, String name) {
         collarId = id;
+        this.name = name;
 
         //hide the list again
         behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
@@ -409,13 +443,13 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                     mGoogleApiClient);
 
             if (lastUserLocation != null) {
-                LatLng latLng = new LatLng(lastUserLocation.getLatitude(), lastUserLocation
+                final LatLng latLng = new LatLng(lastUserLocation.getLatitude(), lastUserLocation
                         .getLongitude());
-                final CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latLng, 15);
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latLng, 15);
                         map.animateCamera(camera);
                     }
                 });
@@ -678,24 +712,32 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             case R.id.app_settings: {
                 FragmentTransaction transaction = getFragmentManager().beginTransaction();
                 transaction.addToBackStack(null);
-                transaction.replace(R.id.content_frag, SettingsPageFragment.newInstance())
+                transaction.replace(R.id.content_frag, SettingsPageFragment.newInstance(collarId))
                         .commit();
                 break;
             }
 
-            case R.id.remove_safezone:
+            case R.id.remove_safezone: {
                 FragmentTransaction transaction = getFragmentManager().beginTransaction();
                 transaction.addToBackStack(null);
                 transaction.replace(R.id.content_frag, RemoveSafezonesFragment.newInstance
                         (username)).commit();
                 break;
+            }
 
             case R.id.app_add_collar:
                 DialogFragment addCollarDialog = AddCollarDialogFragment.newInstance();
                 addCollarDialog.show(getChildFragmentManager(), "dialog");
                 break;
 
+            case R.id.app_delete_collar:
+                FragmentTransaction transaction = getFragmentManager().beginTransaction();
+                //transaction.addToBackStack(null);
+                transaction.replace(R.id.content_frag, DeleteCollarFragment.newInstance()).commit();
+                break;
+
             case R.id.refresh_map:
+                initCollarList();
                 displayMap();
                 break;
 
@@ -715,6 +757,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
      */
     @Override
     public void displayMap() {
+
         safezones.clear();
 
         if (circleMap.get(collarId) != null) {
@@ -723,6 +766,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
         // if map already initialized, you can clear it
         if (map != null) {
+            Log.d(TAG, "display map collar id: " + collarId);
             map.clear();
         }
         sendMessage("GET_RECORDS " + collarId + " 1 ");
@@ -769,22 +813,16 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     private BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            final int notifTime = intent.getIntExtra("notifTime", 0);
 
-            new Runnable() {
+            getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            map.clear();
-                            sendMessage("GET_MESSAGES 0 ");
-                        }
-                    });
-
-                    mHandler.postDelayed(this, notifTime);
+                    Log.d(TAG, "retrieving records");
+                    map.clear();
+                    sendMessage("GET_RECORDS " + collarId + " 1 ");
                 }
-            };
+            });
+
         }
     };
 

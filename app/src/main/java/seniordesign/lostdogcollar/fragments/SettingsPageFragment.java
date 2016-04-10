@@ -2,6 +2,8 @@ package seniordesign.lostdogcollar.fragments;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
@@ -22,6 +24,8 @@ import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 
 import seniordesign.lostdogcollar.R;
+import seniordesign.lostdogcollar.RetrieveFromServerAsyncTask;
+import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 
 
 public class SettingsPageFragment extends Fragment implements AdapterView.OnItemSelectedListener {
@@ -33,20 +37,31 @@ public class SettingsPageFragment extends Fragment implements AdapterView.OnItem
     private static final int FIVE_MINUTES = 300000;
     private static final int TEN_MINUTES = 1600000;
 
+    private static final String COLLAR = "collar";
+
     private CallbackManager callbackManager;
+    private int collarId;
 
     public SettingsPageFragment() {
         // Required empty public constructor
     }
 
-    public static SettingsPageFragment newInstance() {
-        return new SettingsPageFragment();
+    public static SettingsPageFragment newInstance(int collarId) {
+        SettingsPageFragment fragment = new SettingsPageFragment();
+        Bundle args = new Bundle();
+        args.putInt(COLLAR, collarId);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         callbackManager = CallbackManager.Factory.create();
+
+        if (getArguments() != null) {
+            collarId = getArguments().getInt(COLLAR);
+        }
     }
 
     @Override
@@ -121,35 +136,56 @@ public class SettingsPageFragment extends Fragment implements AdapterView.OnItem
         // send notification interval to server
         switch (parent.getSelectedItemPosition()) {
             case 0:
-                setNotifTime(THIRTY_SECONDS);
+                setNotifTime(THIRTY_SECONDS, 0);
                 break;
             case 1:
-                setNotifTime(ONE_MINUTE);
+                setNotifTime(ONE_MINUTE, 1);
                 break;
             case 2:
-                setNotifTime(TWO_MINUTES);
+                setNotifTime(TWO_MINUTES, 2);
                 break;
             case 3:
-                setNotifTime(FIVE_MINUTES);
+                setNotifTime(FIVE_MINUTES, 3);
                 break;
             case 4:
-                setNotifTime(TEN_MINUTES);
+                setNotifTime(TEN_MINUTES, 4);
                 break;
             default:
-                setNotifTime(THIRTY_SECONDS);
+                setNotifTime(THIRTY_SECONDS, 0);
         }
     }
 
-    private void setNotifTime(int ms) {
+    private void setNotifTime(int ms, int selection) {
+        String message = "NOTIFICATION_RATE " + collarId + " " + ms/1000 + " \r\n";
+        RetrieveFromServerAsyncTask rfsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
+            @Override
+            public void onSendResponse(String response) {
+                // we don't care about the response
+            }
+        });
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            rfsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
+        } else {
+            rfsat.execute(message);
+        }
+
         SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
                 .prefs_name), 0);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putInt("notifTime", ms);  // send notifs every ms milliseconds
+        editor.putInt("notifSelect", selection);  // send notifs every ms milliseconds
+        editor.putInt("notifTime", ms);
         editor.apply();
     }
 
     public void onNothingSelected(AdapterView<?> parent) {
+        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
+                .prefs_name), 0);
+        int notifSelect = prefs.getInt("notifSelect", 0);  // send notifs every ms milliseconds
+        int notifTime = prefs.getInt("notifTime", 30000);
+
         //if nothing selected, send notifications every 30 seconds
-        setNotifTime(THIRTY_SECONDS);
+        parent.setSelection(notifTime);
+
+        setNotifTime(notifTime, notifSelect);
     }
 }
