@@ -20,6 +20,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -67,6 +68,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 
 import seniordesign.lostdogcollar.Collar;
 import seniordesign.lostdogcollar.listeners.OnRefreshCollarsListener;
@@ -103,7 +105,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     private LatLng dogLastLoc = null;
     private CallbackManager callbackManager;
     private Handler mHandler;
-    private LocalBroadcastManager lbm;
     private CollarListRVAdapter adapter;
     private ImageView image;
     private BottomSheetBehavior behavior;
@@ -111,6 +112,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     private Location lastUserLocation;
     private int collarId;
     private String name;
+    private boolean mStopHandler;
 
     public HomeFragment() {
         // Required empty public constructor
@@ -147,6 +149,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
         collarList = new ArrayList<>();
         mHandler = new Handler();
+        mStopHandler = false;
 
         // sleep so user has time to register
         // TODO: find better way to do this
@@ -161,25 +164,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
         adapter = new CollarListRVAdapter(collarList, this);
         initCollarList();
-
-        lbm = LocalBroadcastManager.getInstance(getContext());
-        lbm.registerReceiver(receiver, new IntentFilter("update-notif-prefs"));
-
-        new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "sending broadcast");
-                SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
-                        .prefs_name), 0);
-                int notifTime = prefs.getInt("notifTime", 30000);
-
-                Intent intent = new Intent();
-                intent.putExtra("notifTime", notifTime);
-
-                lbm.sendBroadcast(intent);
-                mHandler.postDelayed(this, notifTime);
-            }
-        };
     }
 
     private void initCircleMap() {
@@ -402,12 +386,22 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latLng, 15);
-                map.animateCamera(camera);
+                SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
+                        .prefs_name), 0);
 
-                map.addMarker(new MarkerOptions()
-                        .position(latLng)
-                        .title(name + "\'s Last Known Location"));
+                if (prefs.getBoolean("firstTime", true)) {
+                    Log.d(TAG, "first time");
+                    CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latLng, 15);
+                    map.animateCamera(camera);
+
+                    prefs.edit().putBoolean("firstTime", false).apply();
+                }
+                else {
+                    Log.d(TAG, "not first time");
+                    map.addMarker(new MarkerOptions()
+                            .position(latLng)
+                            .title(name + "\'s Last Known Location"));
+                }
             }
         });
     }
@@ -437,22 +431,29 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 .ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
 
-            if (map == null) {} // I'm sure there's a better way to do this
+            if (map != null) { // I'm sure there's a better way to do this
 
-            lastUserLocation = LocationServices.FusedLocationApi.getLastLocation(
-                    mGoogleApiClient);
+                lastUserLocation = LocationServices.FusedLocationApi.getLastLocation(
+                        mGoogleApiClient);
 
-            if (lastUserLocation != null) {
-                final LatLng latLng = new LatLng(lastUserLocation.getLatitude(), lastUserLocation
-                        .getLongitude());
+                if (lastUserLocation != null) {
+                    final LatLng latLng = new LatLng(lastUserLocation.getLatitude(), lastUserLocation
+                            .getLongitude());
 
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latLng, 15);
-                        map.animateCamera(camera);
+                    SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
+                            .prefs_name), 0);
+                    if (prefs.getBoolean("firstTime", true)) {
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                CameraUpdate camera = CameraUpdateFactory.newLatLngZoom(latLng, 15);
+                                map.animateCamera(camera);
+                            }
+                        });
+
+                        prefs.edit().putBoolean("firstTime", false).apply();
                     }
-                });
+                }
             }
         }
 
@@ -485,10 +486,11 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
      * displays these safe zones on map.
      */
     private void addCircles() {
-        for (String sz : safezones) {
-            // splits string by any # of consecutive spaces
-            // safezone[0] = dogLastLoc
-            // safezone[1] = radius
+        ListIterator<String> it = safezones.listIterator();
+
+        while ( it.hasNext() ) {
+            String sz = it.next();
+
             final String[] safezone = sz.split("\\s+");
             final LatLng coords = ResponseConverterUtil.convertCoordsString(safezone[0]);
 
@@ -496,11 +498,11 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 @Override
                 public void run() {
                     Circle circle = map.addCircle(new CircleOptions()
-                                        .center(coords)
-                                        .radius(Double.parseDouble(safezone[1]))
-                                        .fillColor(0x44ff0000)
-                                        .strokeColor(0xffff0000)
-                                        .strokeWidth(0));
+                            .center(coords)
+                            .radius(Double.parseDouble(safezone[1]))
+                            .fillColor(0x44ff0000)
+                            .strokeColor(0xffff0000)
+                            .strokeWidth(0));
 
                     ArrayList<Circle> list = circleMap.get(collarId);
 
@@ -732,12 +734,20 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
             case R.id.app_delete_collar:
                 FragmentTransaction transaction = getFragmentManager().beginTransaction();
-                //transaction.addToBackStack(null);
+                transaction.addToBackStack(null);
+                /*getFragmentManager().addOnBackStackChangedListener(
+                        new FragmentManager.OnBackStackChangedListener() {
+                            public void onBackStackChanged() {
+                                // Update your UI here.
+                                Log.d(TAG, "on back stack changed");
+                                initCollarList();
+                            }
+                        });*/
                 transaction.replace(R.id.content_frag, DeleteCollarFragment.newInstance()).commit();
                 break;
 
             case R.id.refresh_map:
-                initCollarList();
+                //initCollarList();
                 displayMap();
                 break;
 
@@ -806,26 +816,6 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         }
     }
 
-    /**
-     * when phone receives notification, broadcast sent to HomeFragment to update location
-     * periodically. Specifically, update every notifTime seconds.
-     */
-    private BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Log.d(TAG, "retrieving records");
-                    map.clear();
-                    sendMessage("GET_RECORDS " + collarId + " 1 ");
-                }
-            });
-
-        }
-    };
-
     @Override
     public void onStart() {
         mGoogleApiClient.connect();
@@ -842,23 +832,49 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     public void onResume() {
         super.onResume();
         mapView.onResume();
+
+        mStopHandler = false;
+
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                // do your stuff - don't create a new runnable here!
+                if (!mStopHandler) {
+                    Log.d(TAG, "getting latest location again");
+                    safezones.clear();
+                    map.clear();
+                    sendMessage("GET_RECORDS " + collarId + " 1 ");
+                    sendMessage("GET_SAFEZONES " + collarId + " \r\n");
+
+                    mHandler.postDelayed(this, 10000);
+                }
+            }
+        };
+
+        // start it with:
+        mHandler.post(runnable);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         mapView.onPause();
+
+        mStopHandler = true;
+        SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
+                .prefs_name), 0);
+        prefs.edit().putBoolean("firstTime", false).apply();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         mapView.onDestroy();
-        lbm.unregisterReceiver(receiver);
 
         SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
                 .prefs_name), 0);
         prefs.edit().putBoolean("initCollarList", false).apply();
+        prefs.edit().putBoolean("firstTime", false).apply();
     }
 
     @Override
