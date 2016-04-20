@@ -1,6 +1,6 @@
 package seniordesign.lostdogcollar.listeners;
 
-import seniordesign.lostdogcollar.Collar;
+import seniordesign.lostdogcollar.models.Collar;
 
 /**
  * Created by britne on 4/9/16.

@@ -37,6 +37,10 @@ public class MyResponseListener implements OnSendResponseListener {
             }
 
         }
+        else if (response.contains("Need to Login")) {
+            Log.d("MyResponse", "need to login");
+            listener.onReLogin();
+        }
         else {
 
             List<String> responses = ResponseConverterUtil.convertResponseToList(response);
@@ -45,7 +49,13 @@ public class MyResponseListener implements OnSendResponseListener {
                 Log.d("MyResponse", "records time");
                 // TODO: change this because collar id's are necessary now
                 responses.remove(0);    // the RECORDS n is unnecessary
-                listener.displayDogsLocation(responses.get(0));
+
+                if (responses.size() == 0) {
+                    listener.displayOwnLocation();
+                }
+                else {
+                    listener.displayDogsLocation(responses.get(0));
+                }
             }
             else if (responses.get(0).contains("SAFEZONES")) {
                 Log.d("MyResponse", "safezones time");

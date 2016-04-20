@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import seniordesign.lostdogcollar.Collar;
+import seniordesign.lostdogcollar.models.Collar;
+import seniordesign.lostdogcollar.models.Record;
 
 /**
  * Created by britne on 1/28/16.
@@ -39,20 +40,27 @@ public class ResponseConverterUtil {
         return new LatLng(Double.parseDouble(latLng[0]), Double.parseDouble(latLng[1]));
     }
 
-    public static LatLng convertRecordsString(String record) {
+    public static Record convertRecordsString(String record) {
         // TODO: create Record class with coords, battery, sleep time, date
         // TODO: figure out how to parse the rest of string
         // regex to get coords b/w parentheses and that's it
+        String[] arr = record.split(" ");
+        String battery = arr[1];
+        Log.d(TAG, "battery: " + battery);
+
         String coords = "";
         Matcher m = Pattern.compile("\\(([^)]+)\\)").matcher(record);
         while(m.find()) {
             coords = m.group(1);
         }
 
-        String[] latLng = coords.split(",");
+        String[] latLngArray = coords.split(",");
         //Log.i(TAG, "first latlng: " + latLng[0]);
         //Log.i(TAG, "second latlng: " + latLng[1]);
-        return new LatLng(Double.parseDouble(latLng[0]), Double.parseDouble(latLng[1]));
+        LatLng latLng = new LatLng(Double.parseDouble(latLngArray[0]), Double.parseDouble
+                (latLngArray[1]));
+
+        return new Record(latLng, battery);
     }
 
     public static List<String> convertResponseToList(String record) {
@@ -71,7 +79,8 @@ public class ResponseConverterUtil {
             // collarInfo[0] - collar id
             // collarInfo[1] - collar name
             String[] collarInfo = collarArray[i].split(" ");
-            Collar collar = new Collar(Integer.parseInt(collarInfo[0]), collarInfo[1]);
+            Collar collar = new Collar(Integer.parseInt(collarInfo[0]), collarInfo[1],
+                    collarInfo[2]);
             list.add(collar);
         }
 

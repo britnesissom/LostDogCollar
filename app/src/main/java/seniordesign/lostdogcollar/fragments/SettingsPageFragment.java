@@ -28,6 +28,7 @@ import seniordesign.lostdogcollar.RetrieveFromServerAsyncTask;
 import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 
 
+// TODO: change notification rate for each collar instead of in general?
 public class SettingsPageFragment extends Fragment implements AdapterView.OnItemSelectedListener {
 
     private static final String TAG = "SettingsFragment";

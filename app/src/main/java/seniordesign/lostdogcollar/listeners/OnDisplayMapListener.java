@@ -10,4 +10,5 @@ public interface OnDisplayMapListener {
     void displayOwnLocation();
     void displayDogsLocation(String location);
     void displaySafezones(List<String> safezones);
+    void onReLogin();
 }

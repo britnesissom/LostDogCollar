@@ -21,6 +21,8 @@ import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
 import seniordesign.lostdogcollar.R;
 import seniordesign.lostdogcollar.RetrieveFromServerAsyncTask;
 
+
+// TODO: add password security
 public class LoginFragment extends Fragment {
 
     private static final String TAG = "LoginFrag";
@@ -57,9 +59,7 @@ public class LoginFragment extends Fragment {
         checkbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    rememberUser = true;
-                }
+                rememberUser = isChecked;
             }
         });
 
@@ -80,8 +80,13 @@ public class LoginFragment extends Fragment {
         SharedPreferences prefs = getActivity().getSharedPreferences(getResources().getString(R
                 .string.prefs_name), 0);
 
-        String username = prefs.getString("username", null);
-        String password = prefs.getString("password", null);
+        String username = null;
+        String password = null;
+
+        if (rememberUser) {
+            username = prefs.getString("username", null);
+            password = prefs.getString("password", null);
+        }
 
         // if user isn't remembered, send to login screen
         // else, send to home screen
@@ -119,14 +124,14 @@ public class LoginFragment extends Fragment {
                 runOnUi(response);
                 break;
             case "SUCCESS":
-                if (rememberUser) {
-                    SharedPreferences prefs = getActivity().getSharedPreferences(getResources()
-                            .getString(R.string.prefs_name), 0);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putString("username", username);
-                    editor.putString("password", password);
-                    editor.apply();
-                }
+                SharedPreferences prefs = getActivity().getSharedPreferences(getResources()
+                        .getString(R.string.prefs_name), 0);
+                SharedPreferences.Editor editor = prefs.edit();
+
+                editor.putString("username", username);
+                editor.putString("password", password);
+
+                editor.apply();
 
                 FragmentTransaction transaction = getActivity().getSupportFragmentManager()
                         .beginTransaction();

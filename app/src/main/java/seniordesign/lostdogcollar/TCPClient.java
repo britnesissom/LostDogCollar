@@ -1,6 +1,8 @@
 package seniordesign.lostdogcollar;
 
 
+import android.content.SharedPreferences;
+import android.system.ErrnoException;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -12,6 +14,7 @@ import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class TCPClient {
 
@@ -182,7 +185,15 @@ public class TCPClient {
 
 
 
-        } catch (IOException e) {
+        }
+        catch (SocketException e) {
+            Log.e(TAG, "socket ex: " + e.getMessage());
+            // we want to reconnect
+            if (e.getMessage().contains("ECONNRESET")) {
+                run();
+            }
+        }
+        catch (IOException e) {
             Log.e(TAG, "S: Error", e);
         }
         finally {

@@ -4,10 +4,9 @@ package seniordesign.lostdogcollar.fragments;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -18,20 +17,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.model.Circle;
-
 import java.util.ArrayList;
 import java.util.List;
 
-import seniordesign.lostdogcollar.Collar;
+import seniordesign.lostdogcollar.listeners.OnBackPressedListener;
+import seniordesign.lostdogcollar.models.Collar;
 import seniordesign.lostdogcollar.R;
 import seniordesign.lostdogcollar.ResponseConverterUtil;
 import seniordesign.lostdogcollar.RetrieveFromServerAsyncTask;
-import seniordesign.lostdogcollar.fragments.dialogs.AddCollarDialogFragment;
 import seniordesign.lostdogcollar.fragments.dialogs.DeleteCollarDialogFragment;
 import seniordesign.lostdogcollar.listeners.OnRefreshCollarsListener;
 import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
-import seniordesign.lostdogcollar.views.CollarListRVAdapter;
+import seniordesign.lostdogcollar.CollarListRVAdapter;
 
 /**
  * Displays list of collars that user can click to delete. Opens {@link DeleteCollarDialogFragment}
@@ -41,6 +38,9 @@ public class DeleteCollarFragment extends Fragment implements CollarListRVAdapte
         .OnSendCollarIdListener, OnRefreshCollarsListener {
 
     private static final String TAG = "DeleteCollarFrag";
+    private static final String USERNAME = "username";
+
+    private String username;
     private List<Collar> collarList;
     private CollarListRVAdapter adapter;
 
@@ -49,13 +49,21 @@ public class DeleteCollarFragment extends Fragment implements CollarListRVAdapte
         // Required empty public constructor
     }
 
-    public static DeleteCollarFragment newInstance() {
+    public static DeleteCollarFragment newInstance(String username) {
+        DeleteCollarFragment fragment = new DeleteCollarFragment();
+        Bundle args = new Bundle();
+        args.putString(USERNAME, username);
+        fragment.setArguments(args);
         return new DeleteCollarFragment();
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) {
+            username = getArguments().getString(USERNAME);
+        }
 
         collarList = new ArrayList<>();
         adapter = new CollarListRVAdapter(collarList, this);
@@ -137,8 +145,13 @@ public class DeleteCollarFragment extends Fragment implements CollarListRVAdapte
 
     @Override
     public void refreshCollarList(Collar collar) {
+        Log.d(TAG, "refresh collar list");
 
         collarList.remove(collar);
+        List<Collar> list = new ArrayList<>(collarList);
+        collarList.clear();
+        collarList.addAll(list);
+
         Log.d(TAG, "size: " + collarList.size());
 
         //Log.d(TAG, "size after: " + collarList.size());

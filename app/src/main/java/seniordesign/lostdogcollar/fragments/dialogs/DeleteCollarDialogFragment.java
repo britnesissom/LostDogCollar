@@ -10,15 +10,10 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.EditText;
 
-import seniordesign.lostdogcollar.Collar;
+import seniordesign.lostdogcollar.models.Collar;
 import seniordesign.lostdogcollar.listeners.OnRefreshCollarsListener;
 import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
-import seniordesign.lostdogcollar.R;
 import seniordesign.lostdogcollar.RetrieveFromServerAsyncTask;
 
 public class DeleteCollarDialogFragment extends DialogFragment {
@@ -90,7 +85,7 @@ public class DeleteCollarDialogFragment extends DialogFragment {
             @Override
             public void onSendResponse(String response) {
                 //Log.d(TAG, "collar removed");
-                Collar collar = new Collar(id, name);
+                Collar collar = new Collar(id, name, "");
                 listener.refreshCollarList(collar);
             }
         });

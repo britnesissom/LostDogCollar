@@ -6,12 +6,34 @@
     android:layout_height="wrap_content"
     android:padding="16dp">
 
-    <TextView
-        android:id="@+id/collar_name"
+    <RelativeLayout
         android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/collar_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Collar Name"
+            android:textSize="16sp"
+            android:textColor="#000"/>
+
+        <TextView
+            android:id="@+id/battery_life"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="100"
+            android:textColor="#000"
+            android:textSize="16sp"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="10dp"/>
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/current_collar"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Collar Name"
-        android:textSize="16sp"
-        android:textColor="#000"/>
+        android:text="Currently viewing"
+        android:visibility="gone"/>
 
 </LinearLayout>

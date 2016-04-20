@@ -2,12 +2,17 @@ package seniordesign.lostdogcollar;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import com.facebook.appevents.AppEventsLogger;
 
+import java.util.List;
+
+import seniordesign.lostdogcollar.fragments.DeleteCollarFragment;
+import seniordesign.lostdogcollar.fragments.HomeFragment;
 import seniordesign.lostdogcollar.fragments.LoginFragment;
 import seniordesign.lostdogcollar.services.ServerService;
 
@@ -26,6 +31,22 @@ public class MainActivity extends AppCompatActivity {
         transaction.replace(R.id.content_frag, LoginFragment.newInstance());
         transaction.commit();
     }
+
+ /*   @Override
+    public void onBackPressed() {
+        tellFragments();
+        super.onBackPressed();
+    }
+
+    private void tellFragments() {
+        List<Fragment> fragments = getSupportFragmentManager().getFragments();
+        for (Fragment f : fragments) {
+            if (f != null && f instanceof HomeFragment) {
+                Log.d("MainActivity", "home frag");
+                ((HomeFragment) f).onBackPressed();
+            }
+        }
+    }*/
 
     @Override
     protected void onResume() {
