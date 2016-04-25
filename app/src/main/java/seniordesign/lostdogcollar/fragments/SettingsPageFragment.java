@@ -5,8 +5,11 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,6 +18,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -22,14 +26,24 @@ import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+import com.google.android.gms.maps.model.Circle;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import seniordesign.lostdogcollar.DogNotifRVAdapter;
 import seniordesign.lostdogcollar.R;
+import seniordesign.lostdogcollar.ResponseConverterUtil;
 import seniordesign.lostdogcollar.RetrieveFromServerAsyncTask;
+import seniordesign.lostdogcollar.fragments.dialogs.SelectDogDialogFragment;
+import seniordesign.lostdogcollar.listeners.OnSendCollarIdListener;
 import seniordesign.lostdogcollar.listeners.OnSendResponseListener;
+import seniordesign.lostdogcollar.models.Collar;
 
 
 // TODO: change notification rate for each collar instead of in general?
-public class SettingsPageFragment extends Fragment implements AdapterView.OnItemSelectedListener {
+public class SettingsPageFragment extends Fragment implements AdapterView.OnItemSelectedListener,
+        SelectDogDialogFragment.OnSelectDogListener {
 
     private static final String TAG = "SettingsFragment";
     private static final int THIRTY_SECONDS = 30000;
@@ -42,6 +56,10 @@ public class SettingsPageFragment extends Fragment implements AdapterView.OnItem
 
     private CallbackManager callbackManager;
     private int collarId;
+    private Spinner spinner;
+    private boolean first = true;
+    private int ms;
+    private int selection;
 
     public SettingsPageFragment() {
         // Required empty public constructor
@@ -108,55 +126,9 @@ public class SettingsPageFragment extends Fragment implements AdapterView.OnItem
         return view;
     }
 
-    private void setupToolbar(Toolbar toolbar, String title) {
-        toolbar.setTitle(title);
-        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
-        toolbar.setSaveEnabled(false); //TODO: look at this later
-    }
-
-    private void setupSpinner(View view) {
-        Spinner spinner = (Spinner) view.findViewById(R.id.send_notif_spinner);
-        // Create an ArrayAdapter using the string array and a default spinner layout
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getActivity(),
-                R.array.notif_time_choices, android.R.layout.simple_spinner_item);
-        // Specify the layout to use when the list of choices appears
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
-        spinner.setAdapter(adapter);
-        spinner.setOnItemSelectedListener(this);
-    }
-
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        callbackManager.onActivityResult(requestCode, resultCode, data);
-    }
-
-    public void onItemSelected(AdapterView<?> parent, View view,
-                               int pos, long id) {
-        // send notification interval to server
-        switch (parent.getSelectedItemPosition()) {
-            case 0:
-                setNotifTime(THIRTY_SECONDS, 0);
-                break;
-            case 1:
-                setNotifTime(ONE_MINUTE, 1);
-                break;
-            case 2:
-                setNotifTime(TWO_MINUTES, 2);
-                break;
-            case 3:
-                setNotifTime(FIVE_MINUTES, 3);
-                break;
-            case 4:
-                setNotifTime(TEN_MINUTES, 4);
-                break;
-            default:
-                setNotifTime(THIRTY_SECONDS, 0);
-        }
-    }
-
-    private void setNotifTime(int ms, int selection) {
+    public void onSelectDog(int id) {
+        collarId = id;
         String message = "NOTIFICATION_RATE " + collarId + " " + ms/1000 + " \r\n";
         RetrieveFromServerAsyncTask rfsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
             @Override
@@ -173,20 +145,79 @@ public class SettingsPageFragment extends Fragment implements AdapterView.OnItem
         SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
                 .prefs_name), 0);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putInt("notifSelect", selection);  // send notifs every ms milliseconds
-        editor.putInt("notifTime", ms);
+        editor.putInt("notifSelect", selection);
+        editor.putInt("notifTime", ms); // send notifs every ms milliseconds
         editor.apply();
     }
 
-    public void onNothingSelected(AdapterView<?> parent) {
+    private void setupToolbar(Toolbar toolbar, String title) {
+        toolbar.setTitle(title);
+        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
+        toolbar.setSaveEnabled(false); //TODO: look at this later
+    }
+
+    private void setupSpinner(View view) {
+        spinner = (Spinner) view.findViewById(R.id.send_notif_spinner);
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getActivity(),
+                R.array.notif_time_choices, android.R.layout.simple_spinner_item);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(this);
+
         SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
                 .prefs_name), 0);
-        int notifSelect = prefs.getInt("notifSelect", 0);  // send notifs every ms milliseconds
+        int notifSelect = prefs.getInt("notifSelect", 0);
         int notifTime = prefs.getInt("notifTime", 30000);
+        Log.d(TAG, "notif select: " + notifSelect);
+        Log.d(TAG, "notif time: " + notifTime);
 
         //if nothing selected, send notifications every 30 seconds
-        parent.setSelection(notifTime);
-
-        setNotifTime(notifTime, notifSelect);
+        spinner.setSelection(notifSelect);
     }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public void onItemSelected(AdapterView<?> parent, View view,
+                               int pos, long id) {
+        // send notification interval to server
+        if (first) {
+            first = false;
+            return;
+        }
+
+        switch (parent.getSelectedItemPosition()) {
+            case 0:
+                setNotifTime(THIRTY_SECONDS, 0);
+                break;
+            case 1:
+                setNotifTime(ONE_MINUTE, 1);
+                break;
+            case 2:
+                setNotifTime(TWO_MINUTES, 2);
+                break;
+            case 3:
+                setNotifTime(FIVE_MINUTES, 3);
+                break;
+            case 4:
+                setNotifTime(TEN_MINUTES, 4);
+                break;
+        }
+    }
+
+    private void setNotifTime(int ms, int selection) {
+        this.ms = ms;
+        this.selection = selection;
+
+        DialogFragment sddf = SelectDogDialogFragment.newInstance();
+        sddf.show(getChildFragmentManager(), null);
+    }
+
+    public void onNothingSelected(AdapterView<?> parent) {}
 }

@@ -42,7 +42,10 @@ public class RegistrationIntentService extends IntentService {
                     GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
             Log.i(TAG, "token: " + token);
 
-            String message = "REGISTER_USER " + user + " " + pwd + " " + token + "\r\n";
+            String encrypted = encrypt(pwd);
+            //String encrypted = pwd;
+
+            String message = "REGISTER_USER " + user + " " + encrypted + " " + token + "\r\n";
 
             TCPClient tcpClient = TCPClient.getInstance();
             tcpClient.setListener(new TCPClient.OnResponseReceivedListener() {
@@ -70,5 +73,26 @@ public class RegistrationIntentService extends IntentService {
         catch (IOException e) {
             Log.e("RegIntentService", e.getMessage());
         }
+    }
+
+    private static String encrypt(String pass) {
+        String toReturn = "";
+        for (int i = 0; i < pass.length(); i++) {
+            char c = pass.charAt(i);
+            if (c >= 'a' && c <= 'm') {
+                c += 13;
+            }
+            else if (c >= 'A' && c <= 'M') {
+                c += 13;
+            }
+            else if  (c >= 'n' && c <= 'z') {
+                c -= 13;
+            }
+            else if  (c >= 'N' && c <= 'Z') {
+                c -= 13;
+            }
+            toReturn += c;
+        }
+        return toReturn;
     }
 }

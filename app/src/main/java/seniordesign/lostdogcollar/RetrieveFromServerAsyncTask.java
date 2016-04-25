@@ -20,17 +20,20 @@ public class RetrieveFromServerAsyncTask extends AsyncTask<String,String,Void> {
     @Override
     protected Void doInBackground(final String... message) {
         Log.d("RFSAT", "message: " + message[0]);
-        TCPClient tcpClient = TCPClient.getInstance();
-        tcpClient.setListener(new TCPClient.OnResponseReceivedListener() {
-            @Override
-            public void onResponseReceived(String response) {
-                //Log.d("RFSAT", "message: " + message[0] + ", " + "response: " + response);
-                if (listener != null) {
-                    listener.onSendResponse(response);
+
+        //synchronized(this) {
+            TCPClient tcpClient = TCPClient.getInstance();
+            tcpClient.setListener(new TCPClient.OnResponseReceivedListener() {
+                @Override
+                public void onResponseReceived(String response) {
+                    //Log.d("RFSAT", "message: " + message[0] + ", " + "response: " + response);
+                    if (listener != null) {
+                        listener.onSendResponse(response);
+                    }
                 }
-            }
-        });
-        tcpClient.sendMessage(message[0]);
+            });
+            tcpClient.sendMessage(message[0]);
+       // }
 
         return null;
     }

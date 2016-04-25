@@ -47,7 +47,6 @@ public class MyResponseListener implements OnSendResponseListener {
 
             if (responses.get(0).contains("RECORDS")) {
                 Log.d("MyResponse", "records time");
-                // TODO: change this because collar id's are necessary now
                 responses.remove(0);    // the RECORDS n is unnecessary
 
                 if (responses.size() == 0) {

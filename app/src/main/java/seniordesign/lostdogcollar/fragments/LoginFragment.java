@@ -99,13 +99,15 @@ public class LoginFragment extends Fragment {
         return view;
     }
 
-    private void checkSignIn(final String username, final String password) {
-        String message = "LOGIN "+ username + " " + password;
+    private void checkSignIn(final String username, String password) {
+        final String encrypted = encrypt(password);
+        //final String encrypted = password;
+        String message = "LOGIN "+ username + " " + encrypted;
 
         RetrieveFromServerAsyncTask rfsat = new RetrieveFromServerAsyncTask(new OnSendResponseListener() {
             @Override
             public void onSendResponse(String response) {
-                checkLoginResponse(username, password, response);
+                checkLoginResponse(username, encrypted, response);
             }
         });
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -113,6 +115,27 @@ public class LoginFragment extends Fragment {
         } else {
             rfsat.execute(message);
         }
+    }
+
+    private static String encrypt(String pass) {
+        String toReturn = "";
+        for (int i = 0; i < pass.length(); i++) {
+            char c = pass.charAt(i);
+            if (c >= 'a' && c <= 'm') {
+                c += 13;
+            }
+            else if (c >= 'A' && c <= 'M') {
+                c += 13;
+            }
+            else if  (c >= 'n' && c <= 'z') {
+                c -= 13;
+            }
+            else if  (c >= 'N' && c <= 'Z') {
+                c -= 13;
+            }
+            toReturn += c;
+        }
+        return toReturn;
     }
 
     private void checkLoginResponse(String username, String password, String response) {

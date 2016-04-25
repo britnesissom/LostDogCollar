@@ -115,6 +115,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     private boolean mStopHandler;
     private boolean snackbarShown;
     private ArrayList<Circle> circleList;
+    private int messageCase = 0;
 
     public HomeFragment() {
         // Required empty public constructor
@@ -166,7 +167,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         collarId = -1;
 
         adapter = new CollarListRVAdapter(collarList, this);
-        initCollarList();
+       // initCollarList();
     }
 
     private void initCircleMap() {
@@ -213,7 +214,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 SharedPreferences prefs = getActivity().getSharedPreferences(getString(R.string
                         .prefs_name), 0);
                 SharedPreferences.Editor editor = prefs.edit();
-                editor.putInt("notifTime", 0);  // this means don't send notifs unless dog lost
+                editor.remove("notifTime");  // this means don't send notifs unless dog lost
                 editor.apply();
             }
         });
@@ -256,33 +257,38 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             @Override
             public void onMapClick(LatLng latLng) {
                 circleList = circleMap.get(collarId);
-                boolean outside = true;
-
-                for (int i = 0; i < circleList.size(); i++) {
-                    LatLng center = circleList.get(i).getCenter();
-                    double radius = circleList.get(i).getRadius();
-                    float[] distance = new float[1];
-                    Location.distanceBetween(latLng.latitude, latLng.longitude, center.latitude,
-                            center.longitude, distance);
-
-                    if (distance[0] <= radius) {
-                        // open dialog asking to remove circle
-                        DialogFragment removeSafeZoneDialog = RemoveSafeZoneDialogFragment
-                                .newInstance(center, radius, i);
-                        removeSafeZoneDialog.show(getChildFragmentManager(), "dialog");
-
-                        outside = false;
-                        break;
+                if (circleList != null) {
+                    for (int i = 0; i < circleList.size(); i++) {
+                        Log.i(TAG, "circle list: " + circleList.get(i).getId());
                     }
-                }
+                    boolean outside = true;
 
-                // TODO: if statement might be necessary I'm not sure yet
-                if (outside) {
-                    Marker marker = map.addMarker(new MarkerOptions()
-                            .position(latLng)
-                            .title("Click here to add safezone")
-                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-                    marker.showInfoWindow();
+                    for (int i = 0; i < circleList.size(); i++) {
+                        LatLng center = circleList.get(i).getCenter();
+                        double radius = circleList.get(i).getRadius();
+                        float[] distance = new float[1];
+                        Location.distanceBetween(latLng.latitude, latLng.longitude, center.latitude,
+                                center.longitude, distance);
+
+                        if (distance[0] <= radius) {
+                            // open dialog asking to remove circle
+                            DialogFragment removeSafeZoneDialog = RemoveSafeZoneDialogFragment
+                                    .newInstance(center, radius, i);
+                            removeSafeZoneDialog.show(getChildFragmentManager(), "dialog");
+
+                            outside = false;
+                            break;
+                        }
+                    }
+
+                    // TODO: if statement might be necessary I'm not sure yet
+                    if (outside) {
+                        Marker marker = map.addMarker(new MarkerOptions()
+                                .position(latLng)
+                                .title("Click here to add safezone")
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                        marker.showInfoWindow();
+                    }
                 }
             }
             //Log.d(TAG, "clicked area: " + latLng);
@@ -293,7 +299,22 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     public void removeSafezoneFromServer(LatLng center, double radius, int index) {
         sendMessage("REMOVE_SAFEZONE " + collarId + " (" + center.latitude + ","
                 + center.longitude + ") " + (int) radius + "\r\n");
+        Log.i(TAG, "circle list id: " + circleList.get(index).getId());
+        Log.i(TAG, "circlemap id: " + circleMap.get(collarId).get(index).getId());
+        for (int i = 0; i < circleMap.get(collarId).size(); i++) {
+            Log.i(TAG, "before circle map: " + circleMap.get(collarId).get(i).getId());
+        }
+        circleMap.get(collarId).get(index).remove();
+        for (int i = 0; i < circleMap.get(collarId).size(); i++) {
+            Log.i(TAG, "after circle map: " + circleMap.get(collarId).get(i).getId());
+        }
+        for (int i = 0; i < circleList.size(); i++) {
+            Log.i(TAG, "before circle list: " + circleList.get(i).getId());
+        }
         circleList.get(index).remove();
+        for (int i = 0; i < circleList.size(); i++) {
+            Log.i(TAG, "after circle list: " + circleList.get(i).getId());
+        }
     }
 
     private void setupBottomSheet(View view) {
@@ -383,13 +404,20 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
 
                 // add new circle list for safezones if it's a new collar
                 for (int i = 0; i < collarList.size(); i++) {
-                    if (circleMap.get(collarList.get(i).getId()) == null) {
+                    if (!circleMap.containsKey(collarList.get(i).getId())) {
+                        Log.d(TAG, "new circle map array list");
                         circleMap.put(collarList.get(i).getId(), new ArrayList<Circle>());
+                    }
+                    if (collarList.get(i).getId() == collarId) {
+                        collarId = collarList.get(i).getId();
+                        name = collarList.get(i).getName();
                     }
                 }
 
-                collarId = collarList.get(collarList.size()-1).getId();
-                name = collarList.get(collarList.size()-1).getName();
+                if (collarId == -1) {
+                    collarId = collarList.get(collarList.size()-1).getId();
+                    name = collarList.get(collarList.size()-1).getName();
+                }
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -613,7 +641,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
         RetrieveFromServerAsyncTask rsat = new RetrieveFromServerAsyncTask(new MyResponseListener
                 (getContext(), this));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            rsat.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
+            rsat.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, message);
         } else {
             rsat.execute(message);
         }
@@ -828,7 +856,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
             Log.d(TAG, "display map collar id: " + collarId);
             map.clear();
         }
-        sendMessage("GET_RECORDS " + collarId + " 1 ");
+        sendMessage("GET_RECORDS " + collarId + " 1 \r\n");
         sendMessage("GET_SAFEZONES " + collarId + " \r\n");
     }
 
@@ -889,7 +917,7 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
     public void onResume() {
         super.onResume();
         mapView.onResume();
-        initCollarList();
+        //initCollarList();
 
         try {
             Thread.sleep(2000); // TODO: terrible idea
@@ -906,17 +934,34 @@ public class HomeFragment extends MapsBaseFragment implements GoogleApiClient.Co
                 // do your stuff - don't create a new runnable here!
                 if (!mStopHandler) {
 
-                    if (collarId == -1) {
-                        initCollarList();
-                    }
+                    //if (collarId == -1) {
+                    //initCollarList();
+                    //}
 
                     Log.d(TAG, "getting latest location again");
-                    safezones.clear();
-                    map.clear();
-                    sendMessage("GET_RECORDS " + collarId + " 1 ");
-                    sendMessage("GET_SAFEZONES " + collarId + " \r\n");
 
-                    mHandler.postDelayed(this, 10000);
+
+
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            switch (messageCase) {
+                                case 0:
+                                    initCollarList();
+                                    messageCase += 1;
+                                    break;
+                                case 1:
+                                    safezones.clear();
+                                    map.clear();
+                                    sendMessage("GET_RECORDS " + collarId + " 1 \r\n");
+                                    sendMessage("GET_SAFEZONES " + collarId + " \r\n");
+                                    messageCase = 0;
+                                    break;
+                            }
+                        }
+                    });
+
+                    mHandler.postDelayed(this, 5000);
                 }
             }
         };

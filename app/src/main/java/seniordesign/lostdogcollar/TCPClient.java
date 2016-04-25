@@ -23,7 +23,7 @@ public class TCPClient {
     //private static final String SERVER_IP = "10.145.68.185"; //your computer IP address
     private static final String SERVER_IP = "104.237.130.222"; //your computer IP address
     //private static final String SERVER_IP = "172.17.104.247";
-    private static final int SERVER_PORT = 12000;
+    private static final int SERVER_PORT = 12001;
     // message to send to the server
     private String mServerMessage;
     // sends message received notifications
@@ -38,6 +38,8 @@ public class TCPClient {
 
     // tracks # of times app tries to reconnect to server
     private int retry = 1;
+    private static int count = 0;
+    private static final Object countLock = new Object();
 
     private static TCPClient tcpClient = null;
 
@@ -66,10 +68,13 @@ public class TCPClient {
      */
     public void sendMessage(String message) {
 
-        if (mBufferOut != null && !mBufferOut.checkError()) {
-            Log.i(TAG, "message: " + message);
-            mBufferOut.print(message);
-            mBufferOut.flush();
+        synchronized (this) {
+            //count++;
+            if (mBufferOut != null && !mBufferOut.checkError()) {
+                Log.i(TAG, "message: " + message);
+                mBufferOut.print(message);
+                mBufferOut.flush();
+            }
         }
     }
 
@@ -189,7 +194,7 @@ public class TCPClient {
         catch (SocketException e) {
             Log.e(TAG, "socket ex: " + e.getMessage());
             // we want to reconnect
-            if (e.getMessage().contains("ECONNRESET")) {
+            if (e.getMessage().contains("ECONNRESET") || e.getMessage().contains("ETIMEDOUT")) {
                 run();
             }
         }
